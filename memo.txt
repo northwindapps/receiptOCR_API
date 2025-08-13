@@ -1,0 +1,7 @@
+conda create -n receipt-yolo-env python=3.11
+conda activate receipt-yolo-env
+pip install -r requirements.txt
+
+yolo.py
+yolo_chunk_only.py
+yolo_easyOCR.py
