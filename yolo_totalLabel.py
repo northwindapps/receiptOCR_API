@@ -10,7 +10,7 @@ totalLabel_model = YOLO('totalLabel_best.pt')
 chunk_model = YOLO('text_chunk_epoch40_best.pt')
 
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test10.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test9.jpg'
 image = cv2.imread(image_path)
 
 
@@ -24,8 +24,8 @@ blurred = cv2.GaussianBlur(image, blur_size, sigma)
 sharpened = cv2.addWeighted(image, 1 + strength, blurred, -strength, 0)
 
 # Contrast
-alpha = 1.5  # contrast factor
-beta = -10#-50,-30,10,0,50,100    # brightness offset (tweak if needed)
+alpha = 5.0  #1.5,2,3,4,5 contrast factor
+beta = 80#-100,-80,50,0,50,80,100    # brightness offset (tweak if needed)
 
 bright_contrast_image = cv2.convertScaleAbs(src=sharpened,alpha=alpha,beta=beta)
 # bright_contrast_image = image
@@ -51,7 +51,7 @@ for idx,totalLabel_result in enumerate(totalLabel_results):
         # Layout region coords
         x_min, y_min, x_max, y_max = map(int, totalLabel_box.xyxy[0].tolist())
 
-        target_conf = 0.7
+        target_conf = 0.8
         best_text = ""
         best_conf = 0
 
@@ -100,12 +100,13 @@ for idx,totalLabel_result in enumerate(totalLabel_results):
                 best_conf = avg_conf
                 best_text = text
 
-            if avg_conf >= target_conf:
-                break  # stop early if we hit the goal
+            # if avg_conf >= target_conf:
+                # break  # stop early if we hit the goal
 
         # After loop
         if best_conf >= target_conf:
             print(f"Final OCR Text: {best_text}, Confidence: {best_conf:.2f}")
+            print(f"Box: [{x_min}, {y_min}, {x_max}, {y_max}]")
         else:
             print(f"No high-confidence result found, best was: {best_text} ({best_conf:.2f})")
 
@@ -121,7 +122,7 @@ for idx,totalLabel_result in enumerate(totalLabel_results):
         results = reader.readtext(thresh, detail=1)
 
         for bbox, text, confidence in results:
-            if confidence > 0.7:
+            if confidence > 0.8:
                 print(f"Chunk Text: {text}")
                 print(f"Confidence: {confidence:.2f}")
                 print(f"Chunk BBox: [{x_min}, {y_min}, {x_max}, {y_max}]")
