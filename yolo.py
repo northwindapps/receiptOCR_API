@@ -7,7 +7,7 @@ layout_model = YOLO('layout_best.pt')
 chunk_model = YOLO('text_chunk_epoch40_best.pt')
 
 # --- Image path ---
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test10.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test3.jpg'
 original_image = cv2.imread(image_path)
 
 # Parameters to tweak sharpness

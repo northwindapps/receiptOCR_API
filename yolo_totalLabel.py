@@ -10,7 +10,7 @@ totalLabel_model = YOLO('totalLabel_best.pt')
 chunk_model = YOLO('text_chunk_epoch40_best.pt')
 
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test9.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test3.jpg'
 image = cv2.imread(image_path)
 
 
@@ -25,7 +25,7 @@ sharpened = cv2.addWeighted(image, 1 + strength, blurred, -strength, 0)
 
 # Contrast
 alpha = 5.0  #1.5,2,3,4,5 contrast factor
-beta = 80#-100,-80,50,0,50,80,100    # brightness offset (tweak if needed)
+beta = 80#-100,-80,-50,0,50,80,100    # brightness offset (tweak if needed)
 
 bright_contrast_image = cv2.convertScaleAbs(src=sharpened,alpha=alpha,beta=beta)
 # bright_contrast_image = image
