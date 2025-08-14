@@ -10,7 +10,7 @@ totalLabel_model = YOLO('totalLabel_best.pt')
 chunk_model = YOLO('text_chunk_epoch40_best.pt')
 
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test21.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test13.jpg'
 image = cv2.imread(image_path)
 
 # Parameters to tweak sharpness
@@ -36,8 +36,8 @@ pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tessera
 reader = easyocr.Reader(['en'], gpu=False)  # Change gpu=True if you have a GPU and want to use it
 
  # Define contrast & brightness variations to try
-alpha_values = [-1.0,2.0,3.0,5.0]  # contrast
-beta_values = [-50,0,50,80,160,200]  # brightness
+alpha_values = [-3.0,-1.0,1.5,3.0,5.0]  # contrast
+beta_values = [-80,-50,0,50,80,160]  # brightness
 
 
 
@@ -59,7 +59,7 @@ for idx, totalLabel_result in enumerate(totalLabel_results):
         count = 0
 
         # Loop through margin adjustments
-        for margin_adjust in [-5,-3,-2,-1, 0, 1, 2,3,5,10]:
+        for margin_adjust in [-5,-3,-2,-1, 0, 1, 2,3,5]:
             y_min_adj = max(0, y_min - margin_adjust)
             y_max_adj = y_max
             if stop_early:
