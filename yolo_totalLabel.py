@@ -10,7 +10,7 @@ totalLabel_model = YOLO('totalLabel_best.pt')
 chunk_model = YOLO('text_chunk_epoch40_best.pt')
 
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test21.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test11.jpg'
 image = cv2.imread(image_path)
 
 # Parameters to tweak sharpness
@@ -36,19 +36,19 @@ pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tessera
 reader = easyocr.Reader(['en'], gpu=False)  # Change gpu=True if you have a GPU and want to use it
 
  # Define contrast & brightness variations to try
-# alpha_values = [-3.0,-1.0,1.5,3.0,5.0]  # contrast
+alpha_values = [-3.0,-1.0,1.5,3.0]  # contrast
 # beta_values = [-80,-50,0,50,80,160]  # brightness
-alpha_values = [1.5]  # contrast
+# alpha_values = [1.5]  # contrast
 # beta_values = [-80,-50,0,50,80,160]
 beta_values = [80,50,0,-50,-80]
-cont_area_values = [10,15,35,45]
+cont_area_values = [15,35,45]
 
 # Run layout detection
 totalLabel_results = totalLabel_model(source=sharpened, conf=0.50, save=True, show=True)
 
 # Initialize EasyOCR reader
 reader = easyocr.Reader(['en'], gpu=False)  # Change gpu=True if you have a GPU and want to use it
-
+print(image_path)
 for idx, totalLabel_result in enumerate(totalLabel_results):
     for jdx, totalLabel_box in enumerate(totalLabel_result.boxes):
         x_min, y_min, x_max, y_max = map(int, totalLabel_box.xyxy[0].tolist())
@@ -61,7 +61,7 @@ for idx, totalLabel_result in enumerate(totalLabel_results):
         count = 0
 
         # Loop through margin adjustments
-        for margin_adjust in [-5,-3,-1, 0, 1,3,5]:
+        for margin_adjust in [0]:
             y_min_adj = max(0, y_min - margin_adjust)
             y_max_adj = y_max
             if stop_early:
@@ -71,6 +71,7 @@ for idx, totalLabel_result in enumerate(totalLabel_results):
             for alpha in alpha_values:
                 for beta in beta_values:
                     for cont_value in cont_area_values:
+                        print(f"alpha:beta:contour: [{alpha}, {beta}, {cont_value}]")
                         # Apply brightness & contrast adjustment to original sharpened image
                         bc_image = cv2.convertScaleAbs(src=sharpened, alpha=alpha, beta=beta)
 

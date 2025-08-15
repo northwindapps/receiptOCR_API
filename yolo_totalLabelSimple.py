@@ -43,9 +43,9 @@ reader = easyocr.Reader(['en'], gpu=False)  # Change gpu=True if you have a GPU 
  # Define contrast & brightness variations to try
 # alpha_values = [-3.0,-1.0,1.5,3.0,5.0]  # contrast
 # beta_values = [-80,-50,0,50,80,160]  # brightness
-alpha_values = [1.5,3.0]  # contrast
+alpha_values = [4.0,3.0]  # contrast
 # beta_values = [-80,-50,0,50,80,160]
-cont_area_values = [50]
+cont_area_values = [-80,80]
 rotate_degrees = [-0.5,0,0.5]
 # Run layout detection
 totalLabel_results = totalLabel_model(source=sharpened, conf=0.50, save=True, show=True)
@@ -65,7 +65,7 @@ for idx, totalLabel_result in enumerate(totalLabel_results):
         count = 0
 
         # Loop through margin adjustments
-        for margin_adjust in [-5,0,5]:#[-8,-5,-1, 0, 1,5,8]:
+        for margin_adjust in [0]:#[-8,-5,-1, 0, 1,5,8]:
             y_min_adj = max(0, y_min - margin_adjust)
             y_max_adj = y_max
             if stop_early:
