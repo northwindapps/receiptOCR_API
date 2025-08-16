@@ -23,10 +23,11 @@ totalLabel_model = YOLO('totalLabel_best.pt')
 chunk_model = YOLO('text_chunk_epoch40_best.pt')
 
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test30.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test0.jpg'
 image = cv2.imread(image_path)
-sharpened = image
 
+
+sharpened = image
 # Get image width
 img_height, img_width = image.shape[:2]
 
@@ -41,18 +42,19 @@ pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tessera
 reader = easyocr.Reader(['en'], gpu=False)  # Change gpu=True if you have a GPU and want to use it
 
  # Define contrast & brightness variations to try
-# alpha_values = [-3.0,-1.0,1.5,3.0,5.0]  # contrast
+alpha_values = [-3.0,-1.0,-0.5,1.0]  #1.0 contrast
 # beta_values = [-80,-50,0,50,80,160]  # brightness
-alpha_values = [-2.0,-1.0,1.0,2.0]  # contrast
-beta_values = [100,80,70,50,25,0,-25,-50,-80,-100]
-cont_area_values = [0]
-rotate_degrees = [-0.5,0,0.5]
+# alpha_values = [1.5]  # contrast
+# beta_values = [-80,-50,0,50,80,160]
+beta_values = [150,130,120,100,80,70,50,25,0,-25,-50,-60,-80,-100]
+cont_area_values = [10,55]
+rotate_values = [-1.5,-1.0,0,1.0,1.5]
 # Run layout detection
 totalLabel_results = totalLabel_model(source=sharpened, conf=0.50, save=True, show=True)
 
 # Initialize EasyOCR reader
 reader = easyocr.Reader(['en'], gpu=False)  # Change gpu=True if you have a GPU and want to use it
-skip_box = False
+print(image_path)
 for idx, totalLabel_result in enumerate(totalLabel_results):
     for jdx, totalLabel_box in enumerate(totalLabel_result.boxes):
         x_min, y_min, x_max, y_max = map(int, totalLabel_box.xyxy[0].tolist())
@@ -65,26 +67,48 @@ for idx, totalLabel_result in enumerate(totalLabel_results):
         count = 0
 
         # Loop through margin adjustments
-        for margin_adjust in [0]:#[-8,-5,-1, 0, 1,5,8]:
+        for margin_adjust in [0]:
             y_min_adj = max(0, y_min - margin_adjust)
             y_max_adj = y_max
             if stop_early:
                 break
 
             # Loop through all alpha/beta combinations
-            for cont_value in cont_area_values:
-                layout_crop = sharpened[int(y_min_adj):int(y_max_adj), int(x_max+0):img_width]
-                for degree in rotate_degrees:
-                    for av in alpha_values:
-                        for bv in beta_values:
-                            # rotated = rotate(layout_crop,degree)
-                            # contrast = cv2.convertScaleAbs(rotated, alpha=av, beta=bv)
-                            contrast = layout_crop
-                            processed_img = cv2.resize(contrast, None, fx=3.0, fy=3.0, interpolation=cv2.INTER_CUBIC)
-                            processed_img = cv2.cvtColor(processed_img, cv2.COLOR_BGR2GRAY)
-                            # thresh = cv2.adaptiveThreshold(processed_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 9)
-                            value, otsu = cv2.threshold(processed_img, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-                            thresh = otsu
+            for alpha in alpha_values:
+                for beta in beta_values:
+                    for cont_value in cont_area_values:
+                        print(f"alpha:beta:contour: [{alpha}, {beta}, {cont_value}]")
+                        # Apply brightness & contrast adjustment to original sharpened image
+                        bc_image = cv2.convertScaleAbs(src=sharpened, alpha=alpha, beta=beta)
+                        layout_crop = bc_image[int(y_min_adj):int(y_max_adj), int(x_max+0):int(img_width-10)]
+                        for rv in rotate_values:
+                            rotated = rotate(layout_crop,rv)
+                            scale_factor = 4.0
+                            resized_chunk = cv2.resize(rotated, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_CUBIC)
+
+                            # Parameters to tweak sharpness
+                            strength = 1.5  # How much to boost edges (1.0 = no change)
+                            blur_size = (0, 0)  # Let OpenCV figure size from sigma
+                            sigma = 3.0  # How much to blur before subtracting
+
+                            # Unsharp masking
+                            blurred = cv2.GaussianBlur(resized_chunk, blur_size, sigma)
+                            resized_chunk = cv2.addWeighted(resized_chunk, 1 + strength, blurred, -strength, 0)
+
+                            margin = 20
+                            if len(resized_chunk.shape) == 2:
+                                chunk_crop_with_bg = cv2.copyMakeBorder(
+                                    resized_chunk, margin, margin, margin, margin,
+                                    cv2.BORDER_CONSTANT, value=255
+                                )
+                            else:
+                                chunk_crop_with_bg = cv2.copyMakeBorder(
+                                    resized_chunk, margin, margin, margin, margin,
+                                    cv2.BORDER_CONSTANT, value=[255, 255, 255]
+                                )
+
+                            gray = cv2.cvtColor(chunk_crop_with_bg, cv2.COLOR_BGR2GRAY)
+                            _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
 
                             # Remove small blobs
                             contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -94,7 +118,6 @@ for idx, totalLabel_result in enumerate(totalLabel_results):
 
                             # Save the cropped image
                             crop_filename = os.path.join(save_dir, f"totalLabel_crop_{idx}_{jdx}.png")
-                            
                             cv2.imwrite(crop_filename, thresh)
                             print(f"Saved crop: {crop_filename}")
 
@@ -131,6 +154,8 @@ for idx, totalLabel_result in enumerate(totalLabel_results):
 
                         if best_conf > 0.90 and any(char.isdigit() for char in best_text) and "." in best_text:
                             stop_early = True
+                            print(f"alpha:{alpha}")
+                            print(f"beta:{beta}")
                             print("Contains numbers")
                             break
                         # elif best_conf >= 0.75 and any(char.isdigit() for char in best_text)  and "$" in best_text and "." in best_text:
@@ -141,6 +166,8 @@ for idx, totalLabel_result in enumerate(totalLabel_results):
                         #     break
                         elif best_conf >= 0.75 and any(char.isdigit() for char in best_text) and count > 3 and "." in best_text:
                             stop_early = True
+                            print(f"alpha:{alpha}")
+                            print(f"beta:{beta}")
                             prev = ''
                             count = 0
                             break
@@ -165,18 +192,22 @@ for idx, totalLabel_result in enumerate(totalLabel_results):
 
                                 clean_text = text.replace("-", ".")
                                 if any(char.isdigit() for char in clean_text) and not clean_text.endswith(".") and not clean_text.startswith("."):
-                                    if confidence >= 0.9:
+                                    if confidence >= 0.9 and "." in clean_text:
                                         stop_early = True
                                         print(f"Chunk Text: {clean_text}")
                                         print(f"Confidence: {confidence:.2f}")
                                         print(f"Chunk BBox: [{x_min}, {y_min}, {x_max}, {y_max}]")
+                                        print(f"alpha:{alpha}")
+                                        print(f"beta:{beta}")
                                         print("Contains numbers")
                                         break
-                                    if confidence >= 0.7 and "$" in clean_text:
+                                    if confidence >= 0.7:
                                         stop_early = True
                                         print(f"Chunk Text: {clean_text}")
                                         print(f"Confidence: {confidence:.2f}")
                                         print(f"Chunk BBox: [{x_min}, {y_min}, {x_max}, {y_max}]")
+                                        print(f"alpha:{alpha}")
+                                        print(f"beta:{beta}")
                                         print("Contains $")
                                         break
 

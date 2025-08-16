@@ -23,7 +23,7 @@ totalLabel_model = YOLO('totalLabel_best.pt')
 chunk_model = YOLO('text_chunk_epoch40_best.pt')
 
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test19.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test0.jpg'
 image = cv2.imread(image_path)
 
 
