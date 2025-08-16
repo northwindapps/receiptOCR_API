@@ -30,7 +30,7 @@ chunk_model = YOLO('text_chunk_epoch40_best.pt')
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test20.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test3.jpg'
 image = cv2.imread(image_path)
 sharpened = image
 
@@ -163,6 +163,11 @@ for idx, totalLabel_result in enumerate(totalLabel_results):
                             cv2.imwrite(crop_filename, thresh)
                             print(f"Saved crop: {crop_filename}")
                             print(f"alpha:beta:contour: [{av}, {bv}, {cont_value}]")
+                            stop_early = True
+                            alpha_stop = True
+                            prev = ''
+                            count = 0
+                            count_50 = 0
                         else:
                             print(f"No high-confidence result found, best was: {best_text} ({best_conf:.2f})")
                             # stop_early = True
