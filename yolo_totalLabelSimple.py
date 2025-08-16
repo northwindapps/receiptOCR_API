@@ -23,7 +23,7 @@ totalLabel_model = YOLO('totalLabel_best.pt')
 chunk_model = YOLO('text_chunk_epoch40_best.pt')
 
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test30.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test24.png'
 image = cv2.imread(image_path)
 sharpened = image
 
@@ -45,8 +45,9 @@ reader = easyocr.Reader(['en'], gpu=False)  # Change gpu=True if you have a GPU 
 # beta_values = [-80,-50,0,50,80,160]  # brightness
 alpha_values = [-2.0,-1.0,1.0,2.0]  # contrast
 beta_values = [100,80,70,50,25,0,-25,-50,-80,-100]
-cont_area_values = [0]
-rotate_degrees = [-0.5,0,0.5]
+cont_area_values = [0,55]
+rotate_degrees = [0]
+sizes = [1.5,2.5,2.7,3.2]
 # Run layout detection
 totalLabel_results = totalLabel_model(source=sharpened, conf=0.50, save=True, show=True)
 
@@ -74,17 +75,36 @@ for idx, totalLabel_result in enumerate(totalLabel_results):
             # Loop through all alpha/beta combinations
             for cont_value in cont_area_values:
                 layout_crop = sharpened[int(y_min_adj):int(y_max_adj), int(x_max+0):img_width]
-                for degree in rotate_degrees:
+                for size in sizes:
                     for av in alpha_values:
                         for bv in beta_values:
                             # rotated = rotate(layout_crop,degree)
                             # contrast = cv2.convertScaleAbs(rotated, alpha=av, beta=bv)
                             contrast = layout_crop
-                            processed_img = cv2.resize(contrast, None, fx=3.0, fy=3.0, interpolation=cv2.INTER_CUBIC)
-                            processed_img = cv2.cvtColor(processed_img, cv2.COLOR_BGR2GRAY)
-                            # thresh = cv2.adaptiveThreshold(processed_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 9)
-                            value, otsu = cv2.threshold(processed_img, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-                            thresh = otsu
+                            
+                            
+                            processed_img = cv2.resize(contrast, None, fx=size, fy=size, interpolation=cv2.INTER_CUBIC)
+                            g = cv2.cvtColor(processed_img, cv2.COLOR_BGR2GRAY)
+                            
+                            thresh = cv2.adaptiveThreshold(g, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 9)
+                            # value, otsu = cv2.threshold(g, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+                            # thresh = otsu
+
+                            margin = 20
+                            if len(thresh.shape) == 2:  # grayscale
+                                chunk_crop_with_bg = cv2.copyMakeBorder(
+                                    thresh, margin, margin, margin, margin,
+                                    cv2.BORDER_CONSTANT, value=255
+                                )
+                            else:  # color (3 channels)
+                                chunk_crop_with_bg = cv2.copyMakeBorder(
+                                    thresh, margin, margin, margin, margin,
+                                    cv2.BORDER_CONSTANT, value=[255,255,255]
+                                )
+
+                            
+                            thresh = chunk_crop_with_bg
+                            
 
                             # Remove small blobs
                             contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
