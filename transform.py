@@ -3,6 +3,7 @@ import cv2
 import imutils
 # from google.colab.patches import cv2_imshow
 from matplotlib import pyplot as plt
+import pytesseract
 
 def find_contours(img): # EXTERNAL
   conts = cv2.findContours(img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -18,13 +19,13 @@ def process_img(img):
 def transform_image(image_file):
   img = cv2.imread(image_file)
   original = img.copy()
-  show_img(img)
+  # show_img(img)
   (H, W) = img.shape[:2]
 
   gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
   blur = cv2.GaussianBlur(gray, (7, 7), 0)
   edged = cv2.Canny(blur, 60, 160)
-  show_img(edged)
+  # show_img(edged)
   conts = find_contours(edged.copy())
   larger = None
   for c in conts:
@@ -76,6 +77,18 @@ def show_img(img):
   plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
   plt.show()
 
-img = transform_image(r'C:\Users\ABC\Documents\receiptYOLOProject\test12.jpg')
+img = transform_image(r'C:\Users\ABC\Documents\receiptYOLOProject\test24.png')
 img = process_img(img)
 show_img(img)
+
+# Configure Tesseract for numbers and currency
+custom_config = r'--psm 7 -c tessedit_char_whitelist=0123456789.$- '
+
+# Tesseract path
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+# Try different versions
+# for img, name in [(cleaned, 'cleaned'), (adaptive, 'adaptive'), (otsu, 'otsu')]:
+text = pytesseract.image_to_string(img, lang='eng',config=custom_config)
+print(text)
+# print(f"{name}: {text.strip()}")
