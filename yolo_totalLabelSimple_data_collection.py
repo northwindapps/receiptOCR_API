@@ -22,7 +22,7 @@ def safe_filename(text):
     # Replace forbidden characters with underscore
     return re.sub(r'[\\/*?:"<>|]', "_", text)
 
-def reading_part(timestamp, idx,jdx,cont_area_values, sharpend,totalLabel_box,alpha_values,beta_values,scales):
+def reading_part(rotate_degrees,timestamp, idx,jdx,cont_area_values, sharpend,totalLabel_box,alpha_values,beta_values,scales):
     target_conf = 0.9
     best_text = ""
     best_conf = 0
@@ -31,7 +31,7 @@ def reading_part(timestamp, idx,jdx,cont_area_values, sharpend,totalLabel_box,al
     count_50 = 0
     x_min, y_min, x_max, y_max = map(int, totalLabel_box.xyxy[0].tolist())
     # Loop through margin adjustments
-    for r in [-0.5,-0.3,0.0,0.3,0.5]:
+    for r in [0.0]:
         rotated = rotate(sharpend,r)
         # Loop through all alpha/beta combinations
         for cont_value in cont_area_values:
@@ -217,7 +217,7 @@ totalLabel_model = YOLO('totalValuePairs_best.pt')
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test29.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test55.jpg'
 image = cv2.imread(image_path)
 sharpened = image
 
@@ -225,7 +225,7 @@ sharpened = image
 img_height, img_width = image.shape[:2]
 
 # Create folder to save crops
-save_dir = r"C:\Users\ABC\Documents\receiptYOLOProject\crops"
+save_dir = r"C:\Users\ABC\Documents\receiptYOLOProject\dataset\crops"
 os.makedirs(save_dir, exist_ok=True)
 
 # Tesseract path
@@ -241,9 +241,9 @@ alpha_values = [-2.0,-1.0,1.0,2.0]  # contrast
 beta_values = [100,50,25,0,-25,-50,-100]
 cont_area_values = [0,15,55]
 rotate_degrees = [-1.5,-1.0,0,1.0,1.5]
-scales = [1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7]
+scales = [1.0,1.2,1.4,1.6,1.8]
 # Run layout detection
-totalLabel_results = totalLabel_model(source=sharpened, conf=0.30, save=True, show=True)
+totalLabel_results = totalLabel_model(source=sharpened, conf=0.10, save=True, show=True)
 
 # Initialize EasyOCR reader
 reader = easyocr.Reader(['en'], gpu=False)  # Change gpu=True if you have a GPU and want to use it
@@ -253,7 +253,7 @@ for idx, totalLabel_result in enumerate(totalLabel_results):
         cls_id = int(totalLabel_box.cls[0])  # get class index as int
         if cls_id != 1:   # skip anything not class 1
             continue
-        if not reading_part(timestamp=timestamp,idx=idx,jdx=jdx,sharpend=sharpened,totalLabel_box=totalLabel_box,alpha_values=alpha_values,beta_values=beta_values,scales=scales,cont_area_values=cont_area_values):
+        if not reading_part(rotate_degrees=rotate_degrees,timestamp=timestamp,idx=idx,jdx=jdx,sharpend=sharpened,totalLabel_box=totalLabel_box,alpha_values=alpha_values,beta_values=beta_values,scales=scales,cont_area_values=cont_area_values):
             continue
      
         
