@@ -63,25 +63,27 @@ def reading_part(rotate_degrees,timestamp, idx,jdx,cont_area_values, sharpend,to
                         x_offset = (target_w - w) // 2  # use 0 for left align
                         y_offset = (target_h - h) // 2  # use 0 for top align
 
-                        # paste the crop
-                        canvas[y_offset:y_offset+h, x_offset:x_offset+w] = thresh
+                        if (y_offset + h) <= target_h and (x_offset + w) <= target_w:
+                            # paste the crop
+                            canvas[y_offset:y_offset+h, x_offset:x_offset+w] = thresh
+                        else:
+                            break
+
+                        #keep the original before updating thresh
+                        margin = 5
+
+                        if len(thresh.shape) == 2:  # grayscale
+                            chunk_crop_with_bg = cv2.copyMakeBorder(
+                                thresh, margin, margin, margin, margin,
+                                cv2.BORDER_CONSTANT, value=255
+                            )
+                        else:  # color (3 channels)
+                            chunk_crop_with_bg = cv2.copyMakeBorder(
+                                thresh, margin, margin, margin, margin,
+                                cv2.BORDER_CONSTANT, value=[255,255,255]
+                            )
 
                         thresh = canvas
-                        # margin = 20
-                        # if len(thresh.shape) == 2:  # grayscale
-                        #     chunk_crop_with_bg = cv2.copyMakeBorder(
-                        #         thresh, margin, margin, margin+100, margin+100,
-                        #         cv2.BORDER_CONSTANT, value=255
-                        #     )
-                        # else:  # color (3 channels)
-                        #     chunk_crop_with_bg = cv2.copyMakeBorder(
-                        #         thresh, margin, margin, margin+100, margin+100,
-                        #         cv2.BORDER_CONSTANT, value=[255,255,255]
-                        #     )
-
-                        
-                        # thresh = chunk_crop_with_bg
-                        
 
                         # Remove small blobs
                         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -90,7 +92,7 @@ def reading_part(rotate_degrees,timestamp, idx,jdx,cont_area_values, sharpend,to
                                 cv2.drawContours(thresh, [cnt], -1, 0, -1)
                         # Save the cropped image
                         crop_filename = os.path.join(save_dir, f"totalLabel_crop_{idx}_{jdx}.png")
-                        cv2.imwrite(crop_filename, thresh)
+                        cv2.imwrite(crop_filename, chunk_crop_with_bg)
                         print(f"Saved crop: {crop_filename}")
                         # Run Tesseract
                         data = pytesseract.image_to_data(thresh, lang='eng', output_type=pytesseract.Output.DICT)
@@ -120,13 +122,6 @@ def reading_part(rotate_degrees,timestamp, idx,jdx,cont_area_values, sharpend,to
                         count_50 = 0
                     # After trying all alpha/beta/margin combinations
                     if best_conf >= target_conf:
-                        # print(f"Final OCR Text: {best_text}, Confidence: {best_conf:.2f}")
-                        # print(f"Box: [{x_min}, {y_min}, {x_max}, {y_max}]")
-                        # # Save the cropped image
-                        # crop_filename = os.path.join(save_dir, f"90_crop_{idx}_{jdx}_alpha{av}_beta{bv}_pyttext_{safe_filename(best_text)}_box_[{x_min}_{y_min}_{x_max}_{y_max}]_ts_{timestamp}.png")
-                        # cv2.imwrite(crop_filename, thresh)
-                        # print(f"Saved crop: {crop_filename}")
-                        # print(f"alpha:beta:contour: [{av}, {bv}, {cont_value}]")
                         prev = ''
                         count = 0
                         count_50 = 0
@@ -155,8 +150,9 @@ def reading_part(rotate_degrees,timestamp, idx,jdx,cont_area_values, sharpend,to
                                     print(f"Chunk BBox: [{x_min}, {y_min}, {x_max}, {y_max}]")
                                     print("Contains $")
                         # Save the cropped image
-                        crop_filename = os.path.join(save_dir, f"90_crop_{idx}_{jdx}_alpha{av}_beta{bv}_pyttext_{safe_filename(best_text)}_easyOCR_text_{safe_filename(clean_text)}_conf_{conf:.2f}_box_[{x_min}_{y_min}_{x_max}_{y_max}]_ts_{timestamp}.png")
-                        cv2.imwrite(crop_filename, thresh)
+                        crop_filename = os.path.join(save_dir, f"90_crop_pyttext_{safe_filename(best_text)}_easyOCR_text_{safe_filename(clean_text)}_ts_{timestamp}.jpg")
+                        # cv2.imwrite(crop_filename, thresh)
+                        cv2.imwrite(crop_filename,chunk_crop_with_bg,[int(cv2.IMWRITE_JPEG_QUALITY), 95] )
                         print(f"Saved crop: {crop_filename}")
                         print(f"alpha:beta:contour,scale: [{av}, {bv}, {cont_value},{scale}]")
                         continue
@@ -193,19 +189,14 @@ def reading_part(rotate_degrees,timestamp, idx,jdx,cont_area_values, sharpend,to
                                         print(f"Chunk BBox: [{x_min}, {y_min}, {x_max}, {y_max}]")
                                         print("Contains $")
                             # Save the cropped image
-                            crop_filename = os.path.join(save_dir, f"70_crop_{idx}_{jdx}_alpha{av}_beta{bv}_pyttext_{safe_filename(best_text)}_easyOCR_text_{safe_filename(clean_text)}_conf_{conf:.2f}_box_[{x_min}_{y_min}_{x_max}_{y_max}]_ts_{timestamp}.png")
-                            cv2.imwrite(crop_filename, thresh)
+                            crop_filename = os.path.join(save_dir, f"70_crop_pyttext_{safe_filename(best_text)}_easyOCR_text_{safe_filename(clean_text)}_ts_{timestamp}.jpg")
+                            # cv2.imwrite(crop_filename, thresh)
+                            cv2.imwrite(crop_filename,chunk_crop_with_bg,[int(cv2.IMWRITE_JPEG_QUALITY), 95] )
                             print(f"Saved crop: {crop_filename}")
                             print(f"alpha:beta:contour,scale: [{av}, {bv}, {cont_value},{scale}]")
                             continue
                     if best_conf > 0.90 and any(char.isdigit() for char in best_text) and "." in best_text:
                         print("Contains numbers")
-                    # elif best_conf >= 0.75 and any(char.isdigit() for char in best_text)  and "$" in best_text and "." in best_text:
-                    #     stop_early = True
-                    #     print(f"alpha:{alpha}")
-                    #     print(f"beta:{beta}")
-                    #     print("Contains numbers")
-                    #     break
                     else:
                         continue
     return True
@@ -217,7 +208,7 @@ totalLabel_model = YOLO('totalValuePairs_best.pt')
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test55.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test0.jpg'
 image = cv2.imread(image_path)
 sharpened = image
 
@@ -239,7 +230,7 @@ reader = easyocr.Reader(['en'], gpu=False)  # Change gpu=True if you have a GPU 
 # beta_values = [-80,-50,0,50,80,160]  # brightness
 alpha_values = [-2.0,-1.0,1.0,2.0]  # contrast
 beta_values = [100,50,25,0,-25,-50,-100]
-cont_area_values = [0,15,55]
+cont_area_values = [15,55]
 rotate_degrees = [-1.5,-1.0,0,1.0,1.5]
 scales = [1.0,1.2,1.4,1.6,1.8]
 # Run layout detection
