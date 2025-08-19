@@ -22,13 +22,15 @@ def safe_filename(text):
     # Replace forbidden characters with underscore
     return re.sub(r'[\\/*?:"<>|]', "_", text)
 
-def reading_part(rotate_degrees,timestamp, idx,jdx,cont_area_values, sharpend,totalLabel_box,alpha_values,beta_values,scales):
+def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_box,alpha_values,beta_values,scales):
+    # Get current datetime string (YYYYMMDD_HHMMSS format)
     target_conf = 0.9
     best_text = ""
     best_conf = 0
     prev = ""
     count = 0
     count_50 = 0
+    count_15 = 0
     x_min, y_min, x_max, y_max = map(int, totalLabel_box.xyxy[0].tolist())
     # Loop through margin adjustments
     for r in [0.0]:
@@ -41,6 +43,7 @@ def reading_part(rotate_degrees,timestamp, idx,jdx,cont_area_values, sharpend,to
                 for scale in scales:
                     print(f"scale {scale}")
                     for bv in beta_values:
+
                         # rotated = rotate(layout_crop,degree)
                         # contrast = cv2.convertScaleAbs(rotated, alpha=av, beta=bv)
                         contrast = layout_crop
@@ -70,7 +73,9 @@ def reading_part(rotate_degrees,timestamp, idx,jdx,cont_area_values, sharpend,to
                             break
 
                         #keep the original before updating thresh
-                        margin = 5
+                        margin = 0
+                        if h < 45:
+                            margin = 3
 
                         if len(thresh.shape) == 2:  # grayscale
                             chunk_crop_with_bg = cv2.copyMakeBorder(
@@ -114,8 +119,8 @@ def reading_part(rotate_degrees,timestamp, idx,jdx,cont_area_values, sharpend,to
                         count += 1
                     else:
                         prev = best_text
-                        count = 0
-                    if (best_conf < 0.70 and best_conf > 0.50) and prev == best_text:
+                        count = 0    
+                    if (best_conf < 0.70 and best_conf >= 0.50) and prev == best_text:
                         count_50 += 1
                     else:
                         prev = best_text
@@ -150,11 +155,15 @@ def reading_part(rotate_degrees,timestamp, idx,jdx,cont_area_values, sharpend,to
                                     print(f"Chunk BBox: [{x_min}, {y_min}, {x_max}, {y_max}]")
                                     print("Contains $")
                         # Save the cropped image
+                        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
                         crop_filename = os.path.join(save_dir, f"90_crop_pyttext_{safe_filename(best_text)}_easyOCR_text_{safe_filename(clean_text)}_ts_{timestamp}.jpg")
                         # cv2.imwrite(crop_filename, thresh)
                         cv2.imwrite(crop_filename,chunk_crop_with_bg,[int(cv2.IMWRITE_JPEG_QUALITY), 95] )
                         print(f"Saved crop: {crop_filename}")
                         print(f"alpha:beta:contour,scale: [{av}, {bv}, {cont_value},{scale}]")
+                        count_15 += 1
+                        if count_15 > 5:
+                            return False
                         continue
                     else:
                         print(f"No high-confidence result found, best was: {best_text} ({best_conf:.2f})")
@@ -189,26 +198,24 @@ def reading_part(rotate_degrees,timestamp, idx,jdx,cont_area_values, sharpend,to
                                         print(f"Chunk BBox: [{x_min}, {y_min}, {x_max}, {y_max}]")
                                         print("Contains $")
                             # Save the cropped image
+                            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
                             crop_filename = os.path.join(save_dir, f"70_crop_pyttext_{safe_filename(best_text)}_easyOCR_text_{safe_filename(clean_text)}_ts_{timestamp}.jpg")
                             # cv2.imwrite(crop_filename, thresh)
                             cv2.imwrite(crop_filename,chunk_crop_with_bg,[int(cv2.IMWRITE_JPEG_QUALITY), 95] )
                             print(f"Saved crop: {crop_filename}")
                             print(f"alpha:beta:contour,scale: [{av}, {bv}, {cont_value},{scale}]")
+                            count_15 += 1
+                            if count_15 > 5:
+                                return False
                             continue
-                    if best_conf > 0.90 and any(char.isdigit() for char in best_text) and "." in best_text:
-                        print("Contains numbers")
-                    else:
-                        continue
+                        
     return True
 
 # Load models
 totalLabel_model = YOLO('totalValuePairs_best.pt')         
 
-# Get current datetime string (YYYYMMDD_HHMMSS format)
-timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test0.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test44.jpg'
 image = cv2.imread(image_path)
 sharpened = image
 
@@ -244,7 +251,7 @@ for idx, totalLabel_result in enumerate(totalLabel_results):
         cls_id = int(totalLabel_box.cls[0])  # get class index as int
         if cls_id != 1:   # skip anything not class 1
             continue
-        if not reading_part(rotate_degrees=rotate_degrees,timestamp=timestamp,idx=idx,jdx=jdx,sharpend=sharpened,totalLabel_box=totalLabel_box,alpha_values=alpha_values,beta_values=beta_values,scales=scales,cont_area_values=cont_area_values):
+        if not reading_part(rotate_degrees=rotate_degrees,idx=idx,jdx=jdx,sharpend=sharpened,totalLabel_box=totalLabel_box,alpha_values=alpha_values,beta_values=beta_values,scales=scales,cont_area_values=cont_area_values):
             continue
      
         
