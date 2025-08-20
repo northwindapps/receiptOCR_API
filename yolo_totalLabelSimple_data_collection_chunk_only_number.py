@@ -33,6 +33,9 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
     count_15 = 0
     x_min, y_min, x_max, y_max = map(int, totalLabel_box.xyxy[0].tolist())
     # Loop through margin adjustments
+    sharp_w,sharp_h, _ = sharpend.shape
+    if x_min < sharp_w/3:
+        return False
     for r in [0.0]:
         rotated = rotate(sharpend,r)
         # Loop through all alpha/beta combinations
@@ -212,10 +215,10 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
     return True
 
 # Load models
-totalLabel_model = YOLO('totalValuePairs_best.pt')         
+totalLabel_model = YOLO('text_chunk_epoch40_best.pt')         
 
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test47.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test26.jpg'
 image = cv2.imread(image_path)
 sharpened = image
 
@@ -249,8 +252,8 @@ reader = easyocr.Reader(['en'], gpu=False)  # Change gpu=True if you have a GPU 
 for idx, totalLabel_result in enumerate(totalLabel_results):
     for jdx, totalLabel_box in enumerate(totalLabel_result.boxes):
         cls_id = int(totalLabel_box.cls[0])  # get class index as int
-        if cls_id != 1:   # skip anything not class 1
-            continue
+        # if cls_id != 1:   # skip anything not class 1
+        #     continue
         if not reading_part(rotate_degrees=rotate_degrees,idx=idx,jdx=jdx,sharpend=sharpened,totalLabel_box=totalLabel_box,alpha_values=alpha_values,beta_values=beta_values,scales=scales,cont_area_values=cont_area_values):
             continue
      
