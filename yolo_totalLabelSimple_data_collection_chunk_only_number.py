@@ -117,64 +117,21 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                         #     # want to move next alpha
                         #     stop_early = True
                     
-                    if best_conf >= 0.70 and prev == best_text:
-                        count += 1
-                    else:
-                        prev = best_text
-                        count = 0    
-                    if (best_conf < 0.70 and best_conf >= 0.50) and prev == best_text:
-                        count_50 += 1
-                    else:
-                        prev = best_text
-                        count_50 = 0
-                    # After trying all alpha/beta/margin combinations
-                    if best_conf >= target_conf:
-                        prev = ''
-                        count = 0
-                        count_50 = 0
-                        print("easyOCR")
-                        # Convert BGR to RGB for EasyOCR
-                        chunk_rgb = cv2.cvtColor(thresh, cv2.COLOR_BGR2RGB)
-
-                        # OCR with EasyOCR
-                        results = reader.readtext(chunk_rgb, detail=1)
-                        clean_text = ''
-                        conf = 0.0
-                        for bbox, text, confidence in results:
-                            # print(f"Chunk BBox: [{abs_x_min}, {abs_y_min}, {abs_x_max}, {abs_y_max}]")
-                            conf = confidence
-                            clean_text = text.replace("-", ".")
-                            print(clean_text)
-                            if any(char.isdigit() for char in clean_text) and not clean_text.endswith(".") and not clean_text.startswith("."):
-                                if confidence >= 0.9:
-                                    print(f"Chunk Text: {clean_text}")
-                                    print(f"Confidence: {confidence:.2f}")
-                                    print(f"Chunk BBox: [{x_min}, {y_min}, {x_max}, {y_max}]")
-                                    print("Contains numbers")
-                                if confidence >= 0.7 and "$" in clean_text:
-                                    print(f"Chunk Text: {clean_text}")
-                                    print(f"Confidence: {confidence:.2f}")
-                                    print(f"Chunk BBox: [{x_min}, {y_min}, {x_max}, {y_max}]")
-                                    print("Contains $")
-                        # Save the cropped image
-                        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-                        crop_filename = os.path.join(save_dir, f"90_crop_pyttext_{safe_filename(best_text)}_easyOCR_text_{safe_filename(clean_text)}_ts_{timestamp}.jpg")
-                        # cv2.imwrite(crop_filename, thresh)
-                        cv2.imwrite(crop_filename,chunk_crop_with_bg,[int(cv2.IMWRITE_JPEG_QUALITY), 95] )
-                        print(f"Saved crop: {crop_filename}")
-                        print(f"alpha:beta:contour,scale: [{av}, {bv}, {cont_value},{scale}]")
-                        count_15 += 1
-                        if count_15 > 5:
-                            return False
-                        continue
-                    else:
-                        print(f"No high-confidence result found, best was: {best_text} ({best_conf:.2f})")
-                        # stop_early = True
-                        if any(char.isdigit() for char in best_text) and (count > 2 or count_50 > 3):
+                        if best_conf >= 0.70 and prev == best_text:
+                            count += 1
+                        else:
+                            prev = best_text
+                            count = 0    
+                        if (best_conf < 0.70 and best_conf >= 0.50) and prev == best_text:
+                            count_50 += 1
+                        else:
+                            prev = best_text
+                            count_50 = 0
+                        # After trying all alpha/beta/margin combinations
+                        if best_conf >= target_conf:
                             prev = ''
                             count = 0
                             count_50 = 0
-                            
                             print("easyOCR")
                             # Convert BGR to RGB for EasyOCR
                             chunk_rgb = cv2.cvtColor(thresh, cv2.COLOR_BGR2RGB)
@@ -201,7 +158,7 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                                         print("Contains $")
                             # Save the cropped image
                             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-                            crop_filename = os.path.join(save_dir, f"70_crop_pyttext_{safe_filename(best_text)}_easyOCR_text_{safe_filename(clean_text)}_ts_{timestamp}.jpg")
+                            crop_filename = os.path.join(save_dir, f"90_crop_pyttext_{safe_filename(best_text)}_easyOCR_text_{safe_filename(clean_text)}_ts_{timestamp}.jpg")
                             # cv2.imwrite(crop_filename, thresh)
                             cv2.imwrite(crop_filename,chunk_crop_with_bg,[int(cv2.IMWRITE_JPEG_QUALITY), 95] )
                             print(f"Saved crop: {crop_filename}")
@@ -210,14 +167,57 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                             if count_15 > 5:
                                 return False
                             continue
-                        
+                        else:
+                            print(f"No high-confidence result found, best was: {best_text} ({best_conf:.2f})")
+                            # stop_early = True
+                            if any(char.isdigit() for char in best_text) and (count > 2 or count_50 > 3):
+                                prev = ''
+                                count = 0
+                                count_50 = 0
+                                
+                                print("easyOCR")
+                                # Convert BGR to RGB for EasyOCR
+                                chunk_rgb = cv2.cvtColor(thresh, cv2.COLOR_BGR2RGB)
+
+                                # OCR with EasyOCR
+                                results = reader.readtext(chunk_rgb, detail=1)
+                                clean_text = ''
+                                conf = 0.0
+                                for bbox, text, confidence in results:
+                                    # print(f"Chunk BBox: [{abs_x_min}, {abs_y_min}, {abs_x_max}, {abs_y_max}]")
+                                    conf = confidence
+                                    clean_text = text.replace("-", ".")
+                                    print(clean_text)
+                                    if any(char.isdigit() for char in clean_text) and not clean_text.endswith(".") and not clean_text.startswith("."):
+                                        if confidence >= 0.9:
+                                            print(f"Chunk Text: {clean_text}")
+                                            print(f"Confidence: {confidence:.2f}")
+                                            print(f"Chunk BBox: [{x_min}, {y_min}, {x_max}, {y_max}]")
+                                            print("Contains numbers")
+                                        if confidence >= 0.7 and "$" in clean_text:
+                                            print(f"Chunk Text: {clean_text}")
+                                            print(f"Confidence: {confidence:.2f}")
+                                            print(f"Chunk BBox: [{x_min}, {y_min}, {x_max}, {y_max}]")
+                                            print("Contains $")
+                                # Save the cropped image
+                                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+                                crop_filename = os.path.join(save_dir, f"70_crop_pyttext_{safe_filename(best_text)}_easyOCR_text_{safe_filename(clean_text)}_ts_{timestamp}.jpg")
+                                # cv2.imwrite(crop_filename, thresh)
+                                cv2.imwrite(crop_filename,chunk_crop_with_bg,[int(cv2.IMWRITE_JPEG_QUALITY), 95] )
+                                print(f"Saved crop: {crop_filename}")
+                                print(f"alpha:beta:contour,scale: [{av}, {bv}, {cont_value},{scale}]")
+                                count_15 += 1
+                                if count_15 > 5:
+                                    return False
+                                continue
+                            
     return True
 
 # Load models
 totalLabel_model = YOLO('text_chunk_epoch40_best.pt')         
 
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test8.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test50.jpg'
 image = cv2.imread(image_path)
 sharpened = image
 
