@@ -69,7 +69,7 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                         x_offset = (target_w - w) // 2  # use 0 for left align
                         y_offset = (target_h - h) // 2  # use 0 for top align
 
-                        if (y_offset + h) <= target_h and (x_offset + w) <= target_w:
+                        if x_offset >= 0 and y_offset >= 0 and (y_offset + h) <= target_h and (x_offset + w) <= target_w:
                             # paste the crop
                             canvas[y_offset:y_offset+h, x_offset:x_offset+w] = thresh
                         else:
@@ -109,7 +109,6 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
 
                         text = pytesseract.image_to_string(g, lang='eng', config="--psm 7 -c tessedit_char_whitelist=0123456789:.$").strip()
                         # text = pytesseract.image_to_string(thresh, lang='eng').strip()
-
 
                         if avg_conf > best_conf:
                             best_conf = avg_conf
@@ -218,7 +217,7 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
 totalLabel_model = YOLO('text_chunk_epoch40_best.pt')         
 
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test26.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test8.jpg'
 image = cv2.imread(image_path)
 sharpened = image
 

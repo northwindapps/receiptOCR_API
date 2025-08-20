@@ -66,7 +66,7 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                         x_offset = (target_w - w) // 2  # use 0 for left align
                         y_offset = (target_h - h) // 2  # use 0 for top align
 
-                        if (y_offset + h) <= target_h and (x_offset + w) <= target_w:
+                        if x_offset >= 0 and y_offset >= 0 and (y_offset + h) <= target_h and (x_offset + w) <= target_w:
                             # paste the crop
                             canvas[y_offset:y_offset+h, x_offset:x_offset+w] = thresh
                         else:
