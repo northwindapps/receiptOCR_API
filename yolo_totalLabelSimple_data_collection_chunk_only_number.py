@@ -34,8 +34,8 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
     x_min, y_min, x_max, y_max = map(int, totalLabel_box.xyxy[0].tolist())
     # Loop through margin adjustments
     sharp_w,sharp_h, _ = sharpend.shape
-    if x_min < sharp_w/3:
-        return False
+    # if x_min < sharp_w/3:
+    #     return False
     for r in [0.0]:
         rotated = rotate(sharpend,r)
         # Loop through all alpha/beta combinations
@@ -58,6 +58,13 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                         h, w = thresh.shape[:2]
 
                         target_w, target_h = 292, 62
+
+                        # scale based on height
+                        if h > target_h:
+                            scale = target_h / h
+                            w = int(w * scale)
+                            h = target_h
+                            thresh = cv2.resize(thresh, (w, target_h))
 
                         # create white background
                         if len(thresh.shape) == 2:  # grayscale
@@ -110,6 +117,9 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                         text = pytesseract.image_to_string(g, lang='eng', config="--psm 7 -c tessedit_char_whitelist=0123456789:.$").strip()
                         # text = pytesseract.image_to_string(thresh, lang='eng').strip()
 
+                        if text.strip() == '':
+                            return False
+
                         if avg_conf > best_conf:
                             best_conf = avg_conf
                             best_text = text
@@ -122,6 +132,8 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                         else:
                             prev = best_text
                             count = 0    
+                        if best_conf < 0.5:
+                            return False
                         if (best_conf < 0.70 and best_conf >= 0.50) and prev == best_text:
                             count_50 += 1
                         else:
@@ -217,7 +229,7 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
 totalLabel_model = YOLO('text_chunk_epoch40_best.pt')         
 
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test50.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test67.jpg'
 image = cv2.imread(image_path)
 sharpened = image
 

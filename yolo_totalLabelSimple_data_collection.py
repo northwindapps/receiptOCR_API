@@ -107,6 +107,8 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                         text = pytesseract.image_to_string(g, lang='eng', config="--psm 7 -c tessedit_char_whitelist=0123456789:.$").strip()
                         # text = pytesseract.image_to_string(thresh, lang='eng').strip()
 
+                        if text.strip() == '':
+                            return False
 
                         if avg_conf > best_conf:
                             best_conf = avg_conf
