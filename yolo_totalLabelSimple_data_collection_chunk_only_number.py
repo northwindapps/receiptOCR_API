@@ -5,6 +5,8 @@ import os,re
 import easyocr
 import datetime
 import numpy as np
+from tensorflow.keras.models import load_model
+import tensorflow as tf
 
 def rotate(img,v):
     # Get image dimensions
@@ -57,10 +59,13 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
 
                         h, w = thresh.shape[:2]
 
-                        target_w, target_h = 292, 62
+                        if w/h > 6.0:
+                            break
+
+                        target_h = 31
 
                         # scale based on height
-                        if h > target_h:
+                        if h > target_h or h < target_h:
                             scale = target_h / h
                             w = int(w * scale)
                             h = target_h
@@ -68,37 +73,37 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
 
                         # create white background
                         if len(thresh.shape) == 2:  # grayscale
-                            canvas = np.ones((target_h, target_w), dtype=np.uint8) * 255
+                            canvas = np.ones((target_h, w), dtype=np.uint8) * 255
                         else:  # color
-                            canvas = np.ones((target_h, target_w, 3), dtype=np.uint8) * 255
+                            canvas = np.ones((target_h, w, 3), dtype=np.uint8) * 255
 
-                        # offsets for centering (or left align if you prefer)
-                        x_offset = (target_w - w) // 2  # use 0 for left align
-                        y_offset = (target_h - h) // 2  # use 0 for top align
+                        # # offsets for centering (or left align if you prefer)
+                        # x_offset = w // 2  # use 0 for left align
+                        # y_offset = (target_h - h) // 2  # use 0 for top align
 
-                        if x_offset >= 0 and y_offset >= 0 and (y_offset + h) <= target_h and (x_offset + w) <= target_w:
-                            # paste the crop
-                            canvas[y_offset:y_offset+h, x_offset:x_offset+w] = thresh
-                        else:
-                            break
+                        # if x_offset >= 0 and y_offset >= 0 and (y_offset + h) <= target_h and (x_offset + w) <= w:
+                        #     # paste the crop
+                        #     canvas[y_offset:y_offset+h, x_offset:x_offset+w] = thresh
+                        # else:
+                        #     break
 
                         #keep the original before updating thresh
-                        margin = 0
-                        if h < 45:
-                            margin = 3
+                        # margin = 0
+                        # if h < 45:
+                        #     margin = 3
 
-                        if len(thresh.shape) == 2:  # grayscale
-                            chunk_crop_with_bg = cv2.copyMakeBorder(
-                                thresh, margin, margin, margin, margin,
-                                cv2.BORDER_CONSTANT, value=255
-                            )
-                        else:  # color (3 channels)
-                            chunk_crop_with_bg = cv2.copyMakeBorder(
-                                thresh, margin, margin, margin, margin,
-                                cv2.BORDER_CONSTANT, value=[255,255,255]
-                            )
+                        # if len(thresh.shape) == 2:  # grayscale
+                        #     chunk_crop_with_bg = cv2.copyMakeBorder(
+                        #         thresh, margin, margin, margin, margin,
+                        #         cv2.BORDER_CONSTANT, value=255
+                        #     )
+                        # else:  # color (3 channels)
+                        #     chunk_crop_with_bg = cv2.copyMakeBorder(
+                        #         thresh, margin, margin, margin, margin,
+                        #         cv2.BORDER_CONSTANT, value=[255,255,255]
+                        #     )
 
-                        thresh = canvas
+                        # thresh = canvas
 
                         # Remove small blobs
                         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -107,8 +112,31 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                                 cv2.drawContours(thresh, [cnt], -1, 0, -1)
                         # Save the cropped image
                         crop_filename = os.path.join(save_dir, f"totalLabel_crop_{idx}_{jdx}.png")
-                        cv2.imwrite(crop_filename, chunk_crop_with_bg)
+                        cv2.imwrite(crop_filename, thresh)
                         print(f"Saved crop: {crop_filename}")
+
+                        vocab = "0123456789.,-}{ABCDEFGHIJKLMNOPQRSTUVWXYZ$;pco~ " # Added space to vocab
+                        char_to_idx = {c:i+1 for i,c in enumerate(vocab)}  # 0 reserved for blank
+                        idx_to_char = {i+1:c for i,c in enumerate(vocab)}
+                        # Path to your model
+                        model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\crnn_model.keras"
+
+                        # Load the model
+                        base_model = load_model(model_path, compile=False)
+                        img = thresh.astype(np.float32) / 255.0
+                        img = np.expand_dims(img, axis=-1)            # add channel dimension (H x W x 1)
+                        img = np.expand_dims(img, axis=0)             # add batch dimension (1 x H x W x 1)
+
+
+                        preds = base_model.predict(img)
+                        decoded, _ = tf.keras.backend.ctc_decode(preds, input_length=np.ones(preds.shape[0])*preds.shape[1], greedy=True)
+
+                        decoded_indices = decoded[0].numpy()[0]
+                        decoded_text = [idx_to_char[i] for i in decoded_indices if i > 0]  # skip 0 and negatives
+                        print("Decoded:", decoded_text)
+                        decoded_text = ''.join(decoded_text)
+
+
                         # Run Tesseract
                         data = pytesseract.image_to_data(thresh, lang='eng', output_type=pytesseract.Output.DICT)
                         avg_conf = sum(int(c) for c in data['conf'] if int(c) >= 0) / max(1, len([c for c in data['conf'] if int(c) >= 0]))
@@ -118,6 +146,10 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                         # text = pytesseract.image_to_string(thresh, lang='eng').strip()
 
                         if text.strip() == '':
+                            return False
+                        
+                        if len(text.strip()) < 5:
+                            print("not 4 digits")
                             return False
 
                         if avg_conf > best_conf:
@@ -170,9 +202,9 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                                         print("Contains $")
                             # Save the cropped image
                             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-                            crop_filename = os.path.join(save_dir, f"90_crop_pyttext_{safe_filename(best_text)}_easyOCR_text_{safe_filename(clean_text)}_ts_{timestamp}.jpg")
+                            crop_filename = os.path.join(save_dir, f"90_crop_pyttext_{safe_filename(best_text)}_decoded_text_{safe_filename(decoded_text)}_ts_{timestamp}.jpg")
                             # cv2.imwrite(crop_filename, thresh)
-                            cv2.imwrite(crop_filename,chunk_crop_with_bg,[int(cv2.IMWRITE_JPEG_QUALITY), 95] )
+                            cv2.imwrite(crop_filename,thresh,[int(cv2.IMWRITE_JPEG_QUALITY), 95] )
                             print(f"Saved crop: {crop_filename}")
                             print(f"alpha:beta:contour,scale: [{av}, {bv}, {cont_value},{scale}]")
                             count_15 += 1
@@ -213,9 +245,9 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                                             print("Contains $")
                                 # Save the cropped image
                                 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-                                crop_filename = os.path.join(save_dir, f"70_crop_pyttext_{safe_filename(best_text)}_easyOCR_text_{safe_filename(clean_text)}_ts_{timestamp}.jpg")
+                                crop_filename = os.path.join(save_dir, f"70_crop_pyttext_{safe_filename(best_text)}_decoded_text_{safe_filename(decoded_text)}_ts_{timestamp}.jpg")
                                 # cv2.imwrite(crop_filename, thresh)
-                                cv2.imwrite(crop_filename,chunk_crop_with_bg,[int(cv2.IMWRITE_JPEG_QUALITY), 95] )
+                                cv2.imwrite(crop_filename,thresh,[int(cv2.IMWRITE_JPEG_QUALITY), 95] )
                                 print(f"Saved crop: {crop_filename}")
                                 print(f"alpha:beta:contour,scale: [{av}, {bv}, {cont_value},{scale}]")
                                 count_15 += 1
@@ -229,7 +261,7 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
 totalLabel_model = YOLO('text_chunk_epoch40_best.pt')         
 
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test67.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test22.jpg'
 image = cv2.imread(image_path)
 sharpened = image
 
