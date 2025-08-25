@@ -119,7 +119,7 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                         char_to_idx = {c:i+1 for i,c in enumerate(vocab)}  # 0 reserved for blank
                         idx_to_char = {i+1:c for i,c in enumerate(vocab)}
                         # Path to your model
-                        model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\crnn_model.keras"
+                        model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\crnn_model_1500_do0.028.h5"
 
                         # Load the model
                         base_model = load_model(model_path, compile=False)
@@ -261,7 +261,8 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
 totalLabel_model = YOLO('text_chunk_epoch40_best.pt')         
 
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test22.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\IMG_0941.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test3.jpg'
 image = cv2.imread(image_path)
 sharpened = image
 
