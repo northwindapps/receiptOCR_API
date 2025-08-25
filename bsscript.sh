@@ -1,6 +1,6 @@
 #!/bin/bash
 
-folder="C:\Users\ABC\Documents\receiptYOLOProject\cnndata\images"
+folder="C:\Users\ABC\OneDrive\Desktop\receipt_raws"
 
 # Loop through all files in the folder
 for file in "$folder"/*; do
@@ -8,7 +8,8 @@ for file in "$folder"/*; do
     fname=$(basename "$file")
 
     # Replace all commas with dots
-    newname="${fname//,/.}"
+    # newname="${fname//,/.}"
+    newname="${fname//_crop_pyttext/}"
 
     # Only rename if different
     if [[ "$fname" != "$newname" ]]; then

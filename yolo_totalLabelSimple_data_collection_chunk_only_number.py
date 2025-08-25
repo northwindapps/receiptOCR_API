@@ -71,55 +71,16 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                             h = target_h
                             thresh = cv2.resize(thresh, (w, target_h))
 
-                        # create white background
-                        if len(thresh.shape) == 2:  # grayscale
-                            canvas = np.ones((target_h, w), dtype=np.uint8) * 255
-                        else:  # color
-                            canvas = np.ones((target_h, w, 3), dtype=np.uint8) * 255
-
-                        # # offsets for centering (or left align if you prefer)
-                        # x_offset = w // 2  # use 0 for left align
-                        # y_offset = (target_h - h) // 2  # use 0 for top align
-
-                        # if x_offset >= 0 and y_offset >= 0 and (y_offset + h) <= target_h and (x_offset + w) <= w:
-                        #     # paste the crop
-                        #     canvas[y_offset:y_offset+h, x_offset:x_offset+w] = thresh
-                        # else:
-                        #     break
-
-                        #keep the original before updating thresh
-                        # margin = 0
-                        # if h < 45:
-                        #     margin = 3
-
-                        # if len(thresh.shape) == 2:  # grayscale
-                        #     chunk_crop_with_bg = cv2.copyMakeBorder(
-                        #         thresh, margin, margin, margin, margin,
-                        #         cv2.BORDER_CONSTANT, value=255
-                        #     )
-                        # else:  # color (3 channels)
-                        #     chunk_crop_with_bg = cv2.copyMakeBorder(
-                        #         thresh, margin, margin, margin, margin,
-                        #         cv2.BORDER_CONSTANT, value=[255,255,255]
-                        #     )
-
-                        # thresh = canvas
-
                         # Remove small blobs
                         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                         for cnt in contours:
                             if cv2.contourArea(cnt) < cont_value:
                                 cv2.drawContours(thresh, [cnt], -1, 0, -1)
-                        # Save the cropped image
-                        crop_filename = os.path.join(save_dir, f"totalLabel_crop_{idx}_{jdx}.png")
-                        cv2.imwrite(crop_filename, thresh)
-                        print(f"Saved crop: {crop_filename}")
-
-                        vocab = "0123456789.,-}{ABCDEFGHIJKLMNOPQRSTUVWXYZ$;pco~ " # Added space to vocab
+                        vocab = "0123456789.,-{}()$￥@;~ " # Added space to vocab
                         char_to_idx = {c:i+1 for i,c in enumerate(vocab)}  # 0 reserved for blank
                         idx_to_char = {i+1:c for i,c in enumerate(vocab)}
                         # Path to your model
-                        model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\crnn_model_1500_do0.028.h5"
+                        model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\crnn_model_2000.h5"
 
                         # Load the model
                         base_model = load_model(model_path, compile=False)
@@ -135,6 +96,11 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                         decoded_text = [idx_to_char[i] for i in decoded_indices if i > 0]  # skip 0 and negatives
                         print("Decoded:", decoded_text)
                         decoded_text = ''.join(decoded_text)
+
+                         # Save the cropped image
+                        crop_filename = os.path.join(save_dir, f"0_{decoded_text}_{idx}_{jdx}.png")
+                        cv2.imwrite(crop_filename, thresh)
+                        print(f"Saved crop: {crop_filename}")
 
 
                         # Run Tesseract
@@ -202,7 +168,7 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                                         print("Contains $")
                             # Save the cropped image
                             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-                            crop_filename = os.path.join(save_dir, f"90_crop_pyttext_{safe_filename(best_text)}_decoded_text_{safe_filename(decoded_text)}_ts_{timestamp}.jpg")
+                            crop_filename = os.path.join(save_dir, f"90_{safe_filename(best_text)}_{safe_filename(decoded_text)}_{timestamp}.jpg")
                             # cv2.imwrite(crop_filename, thresh)
                             cv2.imwrite(crop_filename,thresh,[int(cv2.IMWRITE_JPEG_QUALITY), 95] )
                             print(f"Saved crop: {crop_filename}")
@@ -245,8 +211,7 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                                             print("Contains $")
                                 # Save the cropped image
                                 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-                                crop_filename = os.path.join(save_dir, f"70_crop_pyttext_{safe_filename(best_text)}_decoded_text_{safe_filename(decoded_text)}_ts_{timestamp}.jpg")
-                                # cv2.imwrite(crop_filename, thresh)
+                                crop_filename = os.path.join(save_dir, f"70_{safe_filename(best_text)}_{safe_filename(decoded_text)}_{timestamp}.jpg")
                                 cv2.imwrite(crop_filename,thresh,[int(cv2.IMWRITE_JPEG_QUALITY), 95] )
                                 print(f"Saved crop: {crop_filename}")
                                 print(f"alpha:beta:contour,scale: [{av}, {bv}, {cont_value},{scale}]")
@@ -262,7 +227,7 @@ totalLabel_model = YOLO('text_chunk_epoch40_best.pt')
 
 # Image path
 image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\IMG_0941.jpg'
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test3.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test35.jpg'
 image = cv2.imread(image_path)
 sharpened = image
 

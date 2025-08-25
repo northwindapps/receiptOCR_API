@@ -1,7 +1,7 @@
 import os,json,re
 
-folder = r"C:\Users\ABC\OneDrive\Desktop\rawcnndata\images"
-text_file = r"C:\Users\ABC\OneDrive\Desktop\rawcnndata\labels.json"
+folder = r"C:\Users\ABC\OneDrive\Desktop\cnndata\images"
+text_file = r"C:\Users\ABC\OneDrive\Desktop\cnndata\labels.json"
 name_list = []
 data = []
 for idx,fname in enumerate(os.listdir(folder)):
@@ -34,11 +34,10 @@ for fname in name_list:
         continue  # skip files without marker
     # fname = fname.replace(" ","_")
     chunks = fname.split("_")
-    annotation = chunks[3]
-    annotation = annotation.replace("jpy","￥")
-    annotation = annotation.replace(" ","")
-    cleaned = annotation
-    # cleaned = re.sub(r"[A-Za-z\s]", "", annotation)
+    annotation = chunks[1]
+    # annotation = annotation.replace("jpy","￥")
+    # annotation = annotation.replace(" ","")
+    cleaned = re.sub(r"[A-Za-z\s]", "", annotation)
     # cleaned = re.sub(r"[^0-9\-]", "", annotation)
     print(cleaned)
     data.append({
