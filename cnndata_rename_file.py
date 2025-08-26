@@ -5,7 +5,8 @@ text_file = r"C:\Users\ABC\OneDrive\Desktop\cnndata\labels.json"
 name_list = []
 data = []
 for idx,fname in enumerate(os.listdir(folder)):
-    name_list.append(fname)
+    newname = fname.replace("_crop_pyttext","")
+    name_list.append(newname)
     if "_pyttext_" not in fname:
         continue  # skip files without marker
 
@@ -17,17 +18,17 @@ for idx,fname in enumerate(os.listdir(folder)):
 
     # # prepend index to make names unique
     # new_name = f"{idx}_{after}"
-    newname = fname.replace(" "," ")
+    
     new_path = os.path.join(folder, newname)
 
     # rename
     
     # print(f"Renaming: {fname} -> {new_name}")
     if old_path != new_path:
-        if not os.path.exists(new_path):  # only rename if target doesn't exist
-            os.rename(old_path, new_path)
-        else:
-            print(f"⚠️ Skipped, file already exists: {new_path}")
+        if os.path.exists(new_path):  # only rename if target doesn't exist
+            os.remove(new_path)
+        os.rename(old_path, new_path)
+        
 
 for fname in name_list:
     if "labels"  in fname:
@@ -35,7 +36,7 @@ for fname in name_list:
     # fname = fname.replace(" ","_")
     chunks = fname.split("_")
     annotation = chunks[1]
-    # annotation = annotation.replace("jpy","￥")
+    annotation = annotation.replace("jpy","￥")
     # annotation = annotation.replace(" ","")
     cleaned = re.sub(r"[A-Za-z\s]", "", annotation)
     # cleaned = re.sub(r"[^0-9\-]", "", annotation)
@@ -47,4 +48,4 @@ for fname in name_list:
 
 with open(text_file, "w", encoding="utf-8") as f:
     f.write(json.dumps(data, ensure_ascii=False, indent=4))
-
+print(len(name_list))

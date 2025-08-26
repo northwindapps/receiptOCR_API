@@ -227,7 +227,7 @@ totalLabel_model = YOLO('text_chunk_epoch40_best.pt')
 
 # Image path
 image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\IMG_0941.jpg'
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test35.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test36.jpg'
 image = cv2.imread(image_path)
 sharpened = image
 

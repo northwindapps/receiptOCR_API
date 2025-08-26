@@ -169,7 +169,7 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
 totalLabel_model = YOLO('text_chunk_epoch40_best.pt')         
 
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test71.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test32.jpg'
 image = cv2.imread(image_path)
 sharpened = image
 
