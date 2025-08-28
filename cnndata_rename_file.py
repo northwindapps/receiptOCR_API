@@ -1,7 +1,7 @@
 import os,json,re
 
-folder = r"C:\Users\ABC\OneDrive\Desktop\cnndata\images"
-text_file = r"C:\Users\ABC\OneDrive\Desktop\cnndata\labels.json"
+folder = r"C:\Users\ABC\Documents\cnndata\images"
+text_file = r"C:\Users\ABC\Documents\cnndata\labels.json"
 name_list = []
 data = []
 for idx,fname in enumerate(os.listdir(folder)):
@@ -41,10 +41,11 @@ for fname in name_list:
     cleaned = re.sub(r"[A-Za-z\s]", "", annotation)
     # cleaned = re.sub(r"[^0-9\-]", "", annotation)
     print(cleaned)
-    data.append({
-        "filename": fname,
-        "annotation": cleaned
-    })
+    if cleaned != "":
+        data.append({
+            "filename": fname,
+            "annotation": cleaned
+        })
 
 with open(text_file, "w", encoding="utf-8") as f:
     f.write(json.dumps(data, ensure_ascii=False, indent=4))

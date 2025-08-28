@@ -1,6 +1,6 @@
 #!/bin/bash
 
-folder="C:\Users\ABC\OneDrive\Desktop\receipt_raws"
+folder="C:\Users\ABC\Documents\dirty_unique\images"
 
 # Loop through all files in the folder
 for file in "$folder"/*; do
