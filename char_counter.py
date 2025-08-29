@@ -2,6 +2,7 @@ import json
 from collections import Counter
 
 json_file=r"C:\Users\ABC\Documents\receiptYOLOProject\cnndata\labels.json"
+json_file=r"C:\Users\ABC\Documents\clean_unique\cnndata\labels.json"
 # Load your labels.json
 with open(json_file, "r", encoding="utf-8") as f:
     data = json.load(f)

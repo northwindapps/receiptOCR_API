@@ -31,3 +31,8 @@ Epoch 1 → loss: 1.2, val_loss: 1.5
 Epoch 2 → loss: 0.8, val_loss: 1.4  
 Epoch 3 → loss: 0.4, val_loss: 1.6  
 Epoch 4 → loss: 0.2, val_loss: 1.7
+
+#What is epoch, batch, bucket in Machine Learnin?
+Epoch = all buckets (i.e. all images) → many batches
+Batch = one group of images (often from the same bucket) → one step
+Step  = one forward/backward pass on one batch

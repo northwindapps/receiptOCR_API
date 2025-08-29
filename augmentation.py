@@ -10,8 +10,8 @@ import cv2, os, glob, numpy as np, datetime
 
 
 # Directories
-image_dir = r"C:\Users\ABC\Documents\cnndata\images"
-output_dir = r"C:\Users\ABC\Documents\cnndata\output"
+image_dir = r"C:\Users\ABC\Documents\clean_unique\cnndata\images"
+output_dir = r"C:\Users\ABC\Documents\clean_unique\cnndata\output"
 os.makedirs(output_dir, exist_ok=True)
 
 # Augmentation parameters
@@ -58,7 +58,7 @@ for img_path in image_files:
         alpha = np.random.uniform(*contrast_range)
         beta = np.random.randint(*brightness_range)
         augmented = adjust_contrast_brightness(rotated, alpha, beta)
-        augmented = add_noise(augmented, noise_std)  # optional, comment out if not needed
+        # augmented = add_noise(augmented, noise_std)  # optional, comment out if not needed
 
         save_path = os.path.join(output_dir, f"{filename}_aug{i}_m{m}_a{alpha:.2f}_b{beta}.jpg")
         cv2.imwrite(save_path, augmented)

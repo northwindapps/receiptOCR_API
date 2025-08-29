@@ -80,7 +80,7 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                         char_to_idx = {c:i+1 for i,c in enumerate(vocab)}  # 0 reserved for blank
                         idx_to_char = {i+1:c for i,c in enumerate(vocab)}
                         # Path to your model
-                        model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\crnn_model_2000.h5"
+                        model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\crnn_model_15k_good.h5"
 
                         # Load the model
                         base_model = load_model(model_path, compile=False)
@@ -98,8 +98,8 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                         decoded_text = ''.join(decoded_text)
 
                          # Save the cropped image
-                        crop_filename = os.path.join(save_dir, f"0_{decoded_text}_{idx}_{jdx}.png")
-                        cv2.imwrite(crop_filename, thresh)
+                        crop_filename = os.path.join(save_original_dir, f"0_{decoded_text}_{idx}_{jdx}_original.png")
+                        cv2.imwrite(crop_filename, layout_crop)
                         print(f"Saved crop: {crop_filename}")
 
 
@@ -226,8 +226,8 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
 totalLabel_model = YOLO('text_chunk_epoch40_best.pt')         
 
 # Image path
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\IMG_0941.jpg'
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test36.jpg'
+# image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\IMG_0955.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test2.jpg'
 image = cv2.imread(image_path)
 sharpened = image
 
@@ -236,6 +236,9 @@ img_height, img_width = image.shape[:2]
 
 # Create folder to save crops
 save_dir = r"C:\Users\ABC\Documents\receiptYOLOProject\dataset\crops"
+os.makedirs(save_dir, exist_ok=True)
+
+save_original_dir = r"C:\Users\ABC\Documents\receiptYOLOProject\dataset\crops\original"
 os.makedirs(save_dir, exist_ok=True)
 
 # Tesseract path
