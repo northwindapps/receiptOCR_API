@@ -2,6 +2,7 @@ from PIL import Image
 import imagehash, os
 
 folder = r"C:\Users\ABC\Documents\cnndata\images"
+folder = r"C:\Users\ABC\OneDrive\Desktop\cnndata_10k_stable\cnndata\images"
 pmap = {}  # mapping from hash -> list of filenames
 
 for fname in os.listdir(folder):

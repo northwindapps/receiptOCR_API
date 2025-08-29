@@ -1,7 +1,7 @@
 import os,json,re
 
-folder = r"C:\Users\ABC\Documents\cnndata\images"
-text_file = r"C:\Users\ABC\Documents\cnndata\labels.json"
+# folder = r"C:\Users\ABC\Documents\cnndata\images"
+# text_file = r"C:\Users\ABC\Documents\cnndata\labels.json"
 folder = r"C:\Users\ABC\Documents\clean_unique\cnndata\images"
 text_file = r"C:\Users\ABC\Documents\clean_unique\cnndata\labels.json"
 name_list = []
