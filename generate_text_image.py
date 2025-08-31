@@ -45,7 +45,7 @@ def generate_text_image(text, font_path="arial.ttf", size=32, margin=5, max_widt
     return img
 
 
-vocab = ['8', '7', '6', '3', '5', '4','1','9']
+vocab = ['8', '7', '6', '3', '5', '4','1','2','9','0']
 vocab2 = [':', '/', '-']
 
 output_dir = r"C:\Users\ABC\Documents\clean_unique\synthetic"
@@ -72,7 +72,7 @@ for i in range(500):
     # Save image with its label
     img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic.png"))
 
-for i in range(300):
+for i in range(500):
     # Generate year or time stamplike str
     tstr = ""
     tstr += tstr.join(random.choice(vocab) for _ in range(2))
@@ -94,7 +94,7 @@ for i in range(300):
     img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic.png"))
 
 
-for i in range(300):
+for i in range(500):
     # Generate year or time stamplike str
     tstr = "".join(random.choice(vocab) for _ in range(2))
 
@@ -108,5 +108,23 @@ for i in range(300):
     fname = tstr.replace("/","sl")
     fname = fname.replace(":",";")
     # Save image with its label
-    img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic.png"))
+    img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic_date.png"))
+
+
+for i in range(500):
+    # Generate year or time stamplike str
+    tstr = "$"
+    tstr += "".join(random.choice(vocab) for _ in range(2))
+
+    tstr += "."
+
+    tstr += "".join(random.choice(vocab) for _ in range(2))
+    
+    # Create image
+    img = generate_text_image(tstr)
+
+    fname = tstr.replace("/","sl")
+    fname = fname.replace(":",";")
+    # Save image with its label
+    img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic_dollor.png"))
 
