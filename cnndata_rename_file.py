@@ -39,11 +39,13 @@ for fname in name_list:
     chunks = fname.split("_")
     annotation = chunks[1]
     annotation = annotation.replace("jpy","￥")
+    annotation = annotation.replace("sl","/")
     # annotation = annotation.replace(" ","")
     cleaned = re.sub(r"[A-Za-z\s]", "", annotation)
     # cleaned = re.sub(r"[^0-9\-]", "", annotation)
     print(cleaned)
     if cleaned != "":
+   
         data.append({
             "filename": fname,
             "annotation": cleaned
