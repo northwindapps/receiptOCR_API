@@ -7,7 +7,7 @@ layout_model = YOLO('layout_best.pt')
 chunk_model = YOLO('text_chunk_epoch40_best.pt')
 
 # --- Image path ---
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test15.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test25.jpg'
 original_image = cv2.imread(image_path)
 
 # Parameters to tweak sharpness
@@ -35,18 +35,19 @@ pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tessera
 # --- Function to process one image variant ---
 def process_image(image, label):
     print(f"\n=== Processing {label} image ===")
-    layout_results = layout_model(source=image, conf=0.50, save=False, show=False)
+    layout_results = layout_model(source=image, conf=0.50, save=True, show=False)
 
     for layout_result in layout_results:
         for layout_box in layout_result.boxes:
             x_min, y_min, x_max, y_max = map(int, layout_box.xyxy[0].tolist())
-            layout_crop = image[y_min:y_max, x_min:x_max]
+            # layout_crop = image[y_min:y_max, x_min:x_max]
+            # feeding a whole image here
+            layout_crop = image
 
-            chunk_results = chunk_model(layout_crop, conf=0.3)
+            #don't use chunks or better not use, because pytessereact is trained with a whole page not with line chunks. 
+            line_based_results = chunk_model(layout_crop, conf=0.3)
 
-            
-            chunk_crop = layout_crop
-            gray = cv2.cvtColor(chunk_crop, cv2.COLOR_BGR2GRAY)
+            gray = cv2.cvtColor(layout_crop, cv2.COLOR_BGR2GRAY)
             _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
 
             text = pytesseract.image_to_string(thresh, lang='eng').strip()
@@ -57,7 +58,7 @@ def process_image(image, label):
             if text and avg_conf > 0.5:
                 print(f"Layout Class: {int(layout_box.cls[0])}, Conf: {float(layout_box.conf[0]):.2f}")
                 print(f"OCR Confidence: {avg_conf:.2f}")
-                print(f"Chunk Text: {text}")
+                print(f"Chunk Text by Pytesseract: {text}")
                 # print(f"Chunk BBox: [{abs_x_min}, {abs_y_min}, {abs_x_max}, {abs_y_max}]")
                 print("=" * 40)
 

@@ -8,18 +8,28 @@ from ultralytics import YOLO
 image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\test53.jpg"
 image = cv2.imread(image_path)
 
-# Path to your model
+# Load the models
+parse_model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\crnn_model_8k_valloss_0.19.h5"
+parse_model = load_model(parse_model_path, compile=False)
 crop_model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\v5_best_totalPairs.pt"
 crop_model = YOLO(crop_model_path)
-crop_results = crop_model(source=image, conf=0.01, save=True, show=True)
+crop_results = crop_model(source=image, conf=0.7, save=False, show=False)
 
+#output
+total_label_cords = []
+total_value_texts = []
 for idx, crop_result in enumerate(crop_results):
     for jdx, total_box in enumerate(crop_result.boxes):
+        x_min, y_min, x_max, y_max = map(int, total_box.xyxy[0].tolist())
         cls_id = int(total_box.cls[0])  # get class index as int
         if cls_id != 1:   # skip anything not class 1
+            total_label_cords.append([x_min, y_min, x_max, y_max])
             continue
 
-        x_min, y_min, x_max, y_max = map(int, total_box.xyxy[0].tolist())
+        # for kdx, label_cord in enumerate(total_label_cords):
+        #     # parse back
+        #     x_min_l, y_min_l, x_max_l, y_max_l = map(int, label_cord)
+
         crop = image[int(y_min):int(y_max), int(x_min):int(x_max)]  
 
         g = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
@@ -31,7 +41,6 @@ for idx, crop_result in enumerate(crop_results):
         if w/h > 6.0:
             print("you can ignore it w/h>6.0,it's too wide")
             
-
         target_h = 31
 
         # scale based on height
@@ -50,14 +59,9 @@ for idx, crop_result in enumerate(crop_results):
         char_to_idx = {c:i+1 for i,c in enumerate(vocab)}  # 0 reserved for blank
         idx_to_char = {i+1:c for i,c in enumerate(vocab)}
 
-
-        # Load the model
-        parse_model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\crnn_model_8k_valloss_0.19_stable.keras"
-        parse_model = load_model(parse_model_path, compile=False)
         img = thresh.astype(np.float32) / 255.0
         img = np.expand_dims(img, axis=-1)            # add channel dimension (H x W x 1)
         img = np.expand_dims(img, axis=0)             # add batch dimension (1 x H x W x 1)
-
         preds = parse_model.predict(img)
         decoded, _ = tf.keras.backend.ctc_decode(preds, input_length=np.ones(preds.shape[0])*preds.shape[1], greedy=True)
 
@@ -65,6 +69,13 @@ for idx, crop_result in enumerate(crop_results):
         decoded_text = [idx_to_char[i] for i in decoded_indices if i > 0]  # skip 0 and negatives
         print("Decoded:", decoded_text)
         decoded_text = ''.join(decoded_text)
+        try:
+            float_cast = float(decoded_text)   # or float(decoded_text)
+        except ValueError:
+            float_cast = None  # or handle invalid cases
+        if float_cast is not None:
+            total_value_texts.append(float_cast)
+        print(total_value_texts)
         
 
 

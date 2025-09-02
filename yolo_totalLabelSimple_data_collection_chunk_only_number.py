@@ -76,11 +76,11 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                         for cnt in contours:
                             if cv2.contourArea(cnt) < cont_value:
                                 cv2.drawContours(thresh, [cnt], -1, 0, -1)
-                        vocab = "0123456789.,-{}()$￥@;~ " # Added space to vocab
+                        vocab = "0123456789.,-$;/￥ "
                         char_to_idx = {c:i+1 for i,c in enumerate(vocab)}  # 0 reserved for blank
                         idx_to_char = {i+1:c for i,c in enumerate(vocab)}
                         # Path to your model
-                        model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\crnn_model_15k_good.h5"
+                        model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\crnn_model_8k_valloss_0.19_stable.keras"
 
                         # Load the model
                         base_model = load_model(model_path, compile=False)
@@ -96,10 +96,11 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                         decoded_text = [idx_to_char[i] for i in decoded_indices if i > 0]  # skip 0 and negatives
                         print("Decoded:", decoded_text)
                         decoded_text = ''.join(decoded_text)
+                        decoded_text = decoded_text.replace("/","sl")
 
                          # Save the cropped image
                         crop_filename = os.path.join(save_original_dir, f"0_{decoded_text}_{idx}_{jdx}_original.png")
-                        cv2.imwrite(crop_filename, layout_crop)
+                        cv2.imwrite(crop_filename, thresh)
                         print(f"Saved crop: {crop_filename}")
 
 
@@ -168,7 +169,7 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                                         print("Contains $")
                             # Save the cropped image
                             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-                            crop_filename = os.path.join(save_dir, f"90_{safe_filename(best_text)}_{safe_filename(decoded_text)}_{timestamp}.jpg")
+                            crop_filename = os.path.join(save_dir, f"90_{safe_filename(decoded_text)}_{safe_filename(best_text)}_{timestamp}.jpg")
                             # cv2.imwrite(crop_filename, thresh)
                             cv2.imwrite(crop_filename,thresh,[int(cv2.IMWRITE_JPEG_QUALITY), 95] )
                             print(f"Saved crop: {crop_filename}")
@@ -211,7 +212,7 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                                             print("Contains $")
                                 # Save the cropped image
                                 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-                                crop_filename = os.path.join(save_dir, f"70_{safe_filename(best_text)}_{safe_filename(decoded_text)}_{timestamp}.jpg")
+                                crop_filename = os.path.join(save_dir, f"70_{safe_filename(decoded_text)}_{safe_filename(best_text)}_{timestamp}.jpg")
                                 cv2.imwrite(crop_filename,thresh,[int(cv2.IMWRITE_JPEG_QUALITY), 95] )
                                 print(f"Saved crop: {crop_filename}")
                                 print(f"alpha:beta:contour,scale: [{av}, {bv}, {cont_value},{scale}]")
@@ -227,7 +228,7 @@ totalLabel_model = YOLO('text_chunk_epoch40_best.pt')
 
 # Image path
 # image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\IMG_0955.jpg'
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test2.jpg'
+image_path = r"C:\Users\ABC\Downloads\large-receipt-image-dataset-SRD\1182-receipt.jpg"
 image = cv2.imread(image_path)
 sharpened = image
 
@@ -238,8 +239,8 @@ img_height, img_width = image.shape[:2]
 save_dir = r"C:\Users\ABC\Documents\receiptYOLOProject\dataset\crops"
 os.makedirs(save_dir, exist_ok=True)
 
-save_original_dir = r"C:\Users\ABC\Documents\receiptYOLOProject\dataset\crops\original"
-os.makedirs(save_dir, exist_ok=True)
+save_original_dir = r"C:\Users\ABC\Documents\receiptYOLOProject\dataset\crops\all"
+os.makedirs(save_original_dir, exist_ok=True)
 
 # Tesseract path
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
@@ -256,7 +257,7 @@ cont_area_values = [15,55]
 rotate_degrees = [-1.5,-1.0,0,1.0,1.5]
 scales = [1.0,1.2,1.4,1.6,1.8]
 # Run layout detection
-totalLabel_results = totalLabel_model(source=sharpened, conf=0.10, save=True, show=True)
+totalLabel_results = totalLabel_model(source=sharpened, conf=0.01, save=True, show=True)
 
 # Initialize EasyOCR reader
 reader = easyocr.Reader(['en'], gpu=False)  # Change gpu=True if you have a GPU and want to use it
