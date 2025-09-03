@@ -31,7 +31,7 @@ def detect_total_labels(image):
                 total_label_cords.append([x, y, x+w, y+h])
     return total_label_cords
 
-image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\test0.jpg"
+image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\test7.jpg"
 image = cv2.imread(image_path)
 
 # Load the models
@@ -39,7 +39,7 @@ parse_model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\crnn_model_8k_val
 parse_model = load_model(parse_model_path, compile=False)
 crop_model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\v5_best_totalPairs.pt"
 crop_model = YOLO(crop_model_path)
-crop_results = crop_model(source=image, conf=0.6, save=False, show=False)
+crop_results = crop_model(source=image, conf=0.5, save=True, show=True)
 
 # Pytesseract Layer
 total_label_cords = []
@@ -50,12 +50,14 @@ print('TOTAL_COORDINATES',total_label_cords)
 
 # Checking the first layer Results
 total_value_texts = []
-if total_label_cords is not None:
+total_label_cords_2 = []
+if not total_label_cords:
     for idx, crop_result in enumerate(crop_results):
         for jdx, total_box in enumerate(crop_result.boxes):
             x_min, y_min, x_max, y_max = map(int, total_box.xyxy[0].tolist())
             cls_id = int(total_box.cls[0])  # get class index as int
             if cls_id != 1:   # skip anything not class 1
+                total_label_cords_2.append([x_min, y_min, x_max, y_max])
                 continue
 
             for kdx, label_cord in enumerate(total_label_cords):
@@ -111,64 +113,63 @@ if total_label_cords is not None:
                         total_value_texts.append(float_cast)
                     print(total_value_texts)
 
-#Move to backup layer
-if total_value_texts is None:
+#Move to backup layer            
+if total_label_cords_2 and not total_value_texts:
     for idx, crop_result in enumerate(crop_results):
         for jdx, total_box in enumerate(crop_result.boxes):
             x_min, y_min, x_max, y_max = map(int, total_box.xyxy[0].tolist())
             cls_id = int(total_box.cls[0])  # get class index as int
             if cls_id != 1:   # skip anything not class 1
-                total_label_cords.append([x_min, y_min, x_max, y_max])
                 continue
+            for kdx, label_cord in enumerate(total_label_cords_2):
+                # parse back
+                x_min_l, y_min_l, x_max_l, y_max_l = map(int, label_cord)
 
-            # for kdx, label_cord in enumerate(total_label_cords):
-            #     # parse back
-            #     x_min_l, y_min_l, x_max_l, y_max_l = map(int, label_cord)
+                if abs(y_min_l - y_min) < 50 and abs(y_max_l - y_max) < 50:
 
-            crop = image[int(y_min):int(y_max), int(x_min):int(x_max)]  
+                    crop = image[int(y_min):int(y_max), int(x_min):int(x_max)]  
 
-            g = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-                                    
-            thresh = cv2.adaptiveThreshold(g, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 9)
+                    g = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+                                            
+                    thresh = cv2.adaptiveThreshold(g, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 9)
 
-            h, w = thresh.shape[:2]
+                    h, w = thresh.shape[:2]
 
-            if w/h > 6.0:
-                print("you can ignore it w/h>6.0,it's too wide")
-                
-            target_h = 31
+                    if w/h > 6.0:
+                        print("you can ignore it w/h>6.0,it's too wide")
+                        
+                    target_h = 31
 
-            # scale based on height
-            if h > target_h or h < target_h:
-                scale = target_h / h
-                w = int(w * scale)
-                h = target_h
-                thresh = cv2.resize(thresh, (w, target_h))
+                    # scale based on height
+                    if h > target_h or h < target_h:
+                        scale = target_h / h
+                        w = int(w * scale)
+                        h = target_h
+                        thresh = cv2.resize(thresh, (w, target_h))
 
-            # Remove small blobs
-            contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            for cnt in contours:
-                if cv2.contourArea(cnt) < 55:
-                    cv2.drawContours(thresh, [cnt], -1, 0, -1)
-            vocab = "0123456789.,-$ " # Added space to vocab
-            char_to_idx = {c:i+1 for i,c in enumerate(vocab)}  # 0 reserved for blank
-            idx_to_char = {i+1:c for i,c in enumerate(vocab)}
+                    # Remove small blobs
+                    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                    for cnt in contours:
+                        if cv2.contourArea(cnt) < 55:
+                            cv2.drawContours(thresh, [cnt], -1, 0, -1)
+                    vocab = "0123456789.,-$ " # Added space to vocab
+                    char_to_idx = {c:i+1 for i,c in enumerate(vocab)}  # 0 reserved for blank
+                    idx_to_char = {i+1:c for i,c in enumerate(vocab)}
 
-            img = thresh.astype(np.float32) / 255.0
-            img = np.expand_dims(img, axis=-1)            # add channel dimension (H x W x 1)
-            img = np.expand_dims(img, axis=0)             # add batch dimension (1 x H x W x 1)
-            preds = parse_model.predict(img)
-            decoded, _ = tf.keras.backend.ctc_decode(preds, input_length=np.ones(preds.shape[0])*preds.shape[1], greedy=True)
+                    img = thresh.astype(np.float32) / 255.0
+                    img = np.expand_dims(img, axis=-1)            # add channel dimension (H x W x 1)
+                    img = np.expand_dims(img, axis=0)             # add batch dimension (1 x H x W x 1)
+                    preds = parse_model.predict(img)
+                    decoded, _ = tf.keras.backend.ctc_decode(preds, input_length=np.ones(preds.shape[0])*preds.shape[1], greedy=True)
 
-            decoded_indices = decoded[0].numpy()[0]
-            decoded_text = [idx_to_char[i] for i in decoded_indices if i > 0]  # skip 0 and negatives
-            print("Decoded:", decoded_text)
-            decoded_text = ''.join(decoded_text)
-            try:
-                float_cast = float(decoded_text)   # or float(decoded_text)
-            except ValueError:
-                float_cast = None  # or handle invalid cases
-            if float_cast is not None:
-                total_value_texts.append(float_cast)
-            print(total_value_texts)
-            
+                    decoded_indices = decoded[0].numpy()[0]
+                    decoded_text = [idx_to_char[i] for i in decoded_indices if i > 0]  # skip 0 and negatives
+                    print("Decoded:", decoded_text)
+                    decoded_text = ''.join(decoded_text)
+                    try:
+                        float_cast = float(decoded_text)   # or float(decoded_text)
+                    except ValueError:
+                        float_cast = None  # or handle invalid cases
+                    if float_cast is not None:
+                        total_value_texts.append(float_cast)
+                    print(total_value_texts)
