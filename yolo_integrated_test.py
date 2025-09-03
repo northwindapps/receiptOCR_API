@@ -3,9 +3,35 @@ import tensorflow as tf
 import numpy as np
 import cv2
 from ultralytics import YOLO
+import pytesseract
 
+# Need to make this script class 
+def detect_total_labels(image):
+    total_label_cords = []
+    print(f"\n=== Detecting Label in image with Pytesseract===")
+    layout_crop = image
+    gray = cv2.cvtColor(layout_crop, cv2.COLOR_BGR2GRAY)
+    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
 
-image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\test53.jpg"
+    text = pytesseract.image_to_string(thresh, lang='eng').strip()
+    data = pytesseract.image_to_data(thresh, lang='eng', output_type=pytesseract.Output.DICT)
+    confidences = [int(c) for c in data['conf'] if int(c) >= 0]
+    avg_conf = sum(confidences) / max(1, len(confidences)) / 100
+
+    if text and avg_conf > 0.5:
+        # print(f"OCR Confidence: {avg_conf:.2f}")
+        # print(f"Chunk Text by Pytesseract: {text}")
+        # print("=" * 40)
+        for i, word in enumerate(data['text']):
+            if word.strip().upper() == "TOTAL" or word.strip().upper() == "Total":
+                x, y, w, h = data['left'][i], data['top'][i], data['width'][i], data['height'][i]
+                # print(f"Found TOTAL at: x={x}, y={y}, w={w}, h={h}, conf={data['conf'][i]}")
+                # cv2.rectangle(image, (x, y), (x+w, y+h), (0,255,0), 2)
+                # cv2.imwrite("receipt_with_total.jpg", image)
+                total_label_cords.append([x, y, x+w, y+h])
+    return total_label_cords
+
+image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\test0.jpg"
 image = cv2.imread(image_path)
 
 # Load the models
@@ -13,69 +39,136 @@ parse_model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\crnn_model_8k_val
 parse_model = load_model(parse_model_path, compile=False)
 crop_model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\v5_best_totalPairs.pt"
 crop_model = YOLO(crop_model_path)
-crop_results = crop_model(source=image, conf=0.7, save=False, show=False)
+crop_results = crop_model(source=image, conf=0.6, save=False, show=False)
 
-#output
+# Pytesseract Layer
 total_label_cords = []
+# --- Tesseract path ---
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+total_label_cords = detect_total_labels(image)
+print('TOTAL_COORDINATES',total_label_cords)
+
+# Checking the first layer Results
 total_value_texts = []
-for idx, crop_result in enumerate(crop_results):
-    for jdx, total_box in enumerate(crop_result.boxes):
-        x_min, y_min, x_max, y_max = map(int, total_box.xyxy[0].tolist())
-        cls_id = int(total_box.cls[0])  # get class index as int
-        if cls_id != 1:   # skip anything not class 1
-            total_label_cords.append([x_min, y_min, x_max, y_max])
-            continue
+if total_label_cords is not None:
+    for idx, crop_result in enumerate(crop_results):
+        for jdx, total_box in enumerate(crop_result.boxes):
+            x_min, y_min, x_max, y_max = map(int, total_box.xyxy[0].tolist())
+            cls_id = int(total_box.cls[0])  # get class index as int
+            if cls_id != 1:   # skip anything not class 1
+                continue
 
-        # for kdx, label_cord in enumerate(total_label_cords):
-        #     # parse back
-        #     x_min_l, y_min_l, x_max_l, y_max_l = map(int, label_cord)
+            for kdx, label_cord in enumerate(total_label_cords):
+                # parse back
+                x_min_l, y_min_l, x_max_l, y_max_l = map(int, label_cord)
 
-        crop = image[int(y_min):int(y_max), int(x_min):int(x_max)]  
+                if abs(y_min_l - y_min) < 50 and abs(y_max_l - y_max) < 50:
 
-        g = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-                                
-        thresh = cv2.adaptiveThreshold(g, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 9)
+                    crop = image[int(y_min):int(y_max), int(x_min):int(x_max)]  
 
-        h, w = thresh.shape[:2]
+                    g = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+                                            
+                    thresh = cv2.adaptiveThreshold(g, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 9)
 
-        if w/h > 6.0:
-            print("you can ignore it w/h>6.0,it's too wide")
+                    h, w = thresh.shape[:2]
+
+                    if w/h > 6.0:
+                        print("you can ignore it w/h>6.0,it's too wide")
+                        
+                    target_h = 31
+
+                    # scale based on height
+                    if h > target_h or h < target_h:
+                        scale = target_h / h
+                        w = int(w * scale)
+                        h = target_h
+                        thresh = cv2.resize(thresh, (w, target_h))
+
+                    # Remove small blobs
+                    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                    for cnt in contours:
+                        if cv2.contourArea(cnt) < 55:
+                            cv2.drawContours(thresh, [cnt], -1, 0, -1)
+                    vocab = "0123456789.,-$ " # Added space to vocab
+                    char_to_idx = {c:i+1 for i,c in enumerate(vocab)}  # 0 reserved for blank
+                    idx_to_char = {i+1:c for i,c in enumerate(vocab)}
+
+                    img = thresh.astype(np.float32) / 255.0
+                    img = np.expand_dims(img, axis=-1)            # add channel dimension (H x W x 1)
+                    img = np.expand_dims(img, axis=0)             # add batch dimension (1 x H x W x 1)
+                    preds = parse_model.predict(img)
+                    decoded, _ = tf.keras.backend.ctc_decode(preds, input_length=np.ones(preds.shape[0])*preds.shape[1], greedy=True)
+
+                    decoded_indices = decoded[0].numpy()[0]
+                    decoded_text = [idx_to_char[i] for i in decoded_indices if i > 0]  # skip 0 and negatives
+                    print("Decoded:", decoded_text)
+                    decoded_text = ''.join(decoded_text)
+                    try:
+                        float_cast = float(decoded_text)   # or float(decoded_text)
+                    except ValueError:
+                        float_cast = None  # or handle invalid cases
+                    if float_cast is not None:
+                        total_value_texts.append(float_cast)
+                    print(total_value_texts)
+
+#Move to backup layer
+if total_value_texts is None:
+    for idx, crop_result in enumerate(crop_results):
+        for jdx, total_box in enumerate(crop_result.boxes):
+            x_min, y_min, x_max, y_max = map(int, total_box.xyxy[0].tolist())
+            cls_id = int(total_box.cls[0])  # get class index as int
+            if cls_id != 1:   # skip anything not class 1
+                total_label_cords.append([x_min, y_min, x_max, y_max])
+                continue
+
+            # for kdx, label_cord in enumerate(total_label_cords):
+            #     # parse back
+            #     x_min_l, y_min_l, x_max_l, y_max_l = map(int, label_cord)
+
+            crop = image[int(y_min):int(y_max), int(x_min):int(x_max)]  
+
+            g = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+                                    
+            thresh = cv2.adaptiveThreshold(g, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 9)
+
+            h, w = thresh.shape[:2]
+
+            if w/h > 6.0:
+                print("you can ignore it w/h>6.0,it's too wide")
+                
+            target_h = 31
+
+            # scale based on height
+            if h > target_h or h < target_h:
+                scale = target_h / h
+                w = int(w * scale)
+                h = target_h
+                thresh = cv2.resize(thresh, (w, target_h))
+
+            # Remove small blobs
+            contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            for cnt in contours:
+                if cv2.contourArea(cnt) < 55:
+                    cv2.drawContours(thresh, [cnt], -1, 0, -1)
+            vocab = "0123456789.,-$ " # Added space to vocab
+            char_to_idx = {c:i+1 for i,c in enumerate(vocab)}  # 0 reserved for blank
+            idx_to_char = {i+1:c for i,c in enumerate(vocab)}
+
+            img = thresh.astype(np.float32) / 255.0
+            img = np.expand_dims(img, axis=-1)            # add channel dimension (H x W x 1)
+            img = np.expand_dims(img, axis=0)             # add batch dimension (1 x H x W x 1)
+            preds = parse_model.predict(img)
+            decoded, _ = tf.keras.backend.ctc_decode(preds, input_length=np.ones(preds.shape[0])*preds.shape[1], greedy=True)
+
+            decoded_indices = decoded[0].numpy()[0]
+            decoded_text = [idx_to_char[i] for i in decoded_indices if i > 0]  # skip 0 and negatives
+            print("Decoded:", decoded_text)
+            decoded_text = ''.join(decoded_text)
+            try:
+                float_cast = float(decoded_text)   # or float(decoded_text)
+            except ValueError:
+                float_cast = None  # or handle invalid cases
+            if float_cast is not None:
+                total_value_texts.append(float_cast)
+            print(total_value_texts)
             
-        target_h = 31
-
-        # scale based on height
-        if h > target_h or h < target_h:
-            scale = target_h / h
-            w = int(w * scale)
-            h = target_h
-            thresh = cv2.resize(thresh, (w, target_h))
-
-        # Remove small blobs
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        for cnt in contours:
-            if cv2.contourArea(cnt) < 55:
-                cv2.drawContours(thresh, [cnt], -1, 0, -1)
-        vocab = "0123456789.,-$ " # Added space to vocab
-        char_to_idx = {c:i+1 for i,c in enumerate(vocab)}  # 0 reserved for blank
-        idx_to_char = {i+1:c for i,c in enumerate(vocab)}
-
-        img = thresh.astype(np.float32) / 255.0
-        img = np.expand_dims(img, axis=-1)            # add channel dimension (H x W x 1)
-        img = np.expand_dims(img, axis=0)             # add batch dimension (1 x H x W x 1)
-        preds = parse_model.predict(img)
-        decoded, _ = tf.keras.backend.ctc_decode(preds, input_length=np.ones(preds.shape[0])*preds.shape[1], greedy=True)
-
-        decoded_indices = decoded[0].numpy()[0]
-        decoded_text = [idx_to_char[i] for i in decoded_indices if i > 0]  # skip 0 and negatives
-        print("Decoded:", decoded_text)
-        decoded_text = ''.join(decoded_text)
-        try:
-            float_cast = float(decoded_text)   # or float(decoded_text)
-        except ValueError:
-            float_cast = None  # or handle invalid cases
-        if float_cast is not None:
-            total_value_texts.append(float_cast)
-        print(total_value_texts)
-        
-
-
