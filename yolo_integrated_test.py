@@ -1,7 +1,7 @@
 from tensorflow.keras.models import load_model
 import tensorflow as tf
 import numpy as np
-import cv2
+import cv2,os
 from ultralytics import YOLO
 import pytesseract
 
@@ -84,8 +84,16 @@ def parse_boxs(image,total_label_cords):
             if float_cast is not None:
                 total_value_texts.append(float_cast)
             print(total_value_texts)
+            # Save the cropped image
+            crop_filename = os.path.join(save_original_dir, f"0_{decoded_text}_{idx}_{jdx}_original.png")
+            cv2.imwrite(crop_filename, thresh)
+            print(f"Saved crop: {crop_filename}")
 
-image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\test7.jpg"
+
+save_original_dir = r"C:\Users\ABC\Documents\receiptYOLOProject\dataset\crops\all"
+os.makedirs(save_original_dir, exist_ok=True)
+
+image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\test80.jpg"
 image = cv2.imread(image_path)
 
 # Load the models
@@ -93,7 +101,7 @@ parse_model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\crnn_model_8k_val
 parse_model = load_model(parse_model_path, compile=False)
 crop_model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\v5_best_totalPairs.pt"
 crop_model = YOLO(crop_model_path)
-crop_results = crop_model(source=image, conf=0.5, save=True, show=True)
+crop_results = crop_model(source=image, conf=0.2, save=False, show=True)
 
 # Pytesseract Layer
 total_label_cords = []
