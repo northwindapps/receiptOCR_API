@@ -13,7 +13,7 @@ The generated chunks can be used to:
 - Prepare datasets with corresponding **annotation labels** for supervised training
 
 
-### Credits for image dataset
+### Credits for image datasets
 - This project uses the ExpressExpense Sample Receipt Dataset (SRD),
 available at ExpressExpense.com under the MIT License.
 

@@ -7,3 +7,4 @@ easyocr
 paddleocr
 paddlepaddle
 imutils
+rembg
