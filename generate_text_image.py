@@ -128,3 +128,25 @@ for i in range(500):
     # Save image with its label
     img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic_dollor.png"))
 
+
+for i in range(500):
+    # Generate year or time stamplike str
+    tstr = ""
+    tstr += "".join(random.choice(vocab) for _ in range(4))
+
+    tstr += "年"
+
+    tstr += "".join(random.choice(vocab) for _ in range(2))
+
+    tstr += "月"
+
+    tstr += "".join(random.choice(vocab) for _ in range(2))
+
+    tstr += "日"
+    
+    # Create image
+    img = generate_text_image(tstr)
+
+    # Save image with its label
+    img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic_jp_date.png"))
+
