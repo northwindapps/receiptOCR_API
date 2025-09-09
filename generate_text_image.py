@@ -18,6 +18,35 @@ import os
     
     # return img
 
+from PIL import Image, ImageDraw, ImageFont
+
+def generate_jp_text_image(text, font_path="C:/Windows/Fonts/meiryo.ttc", size=20, margin=5, max_width=200):
+    font = ImageFont.truetype(font_path, size)
+
+    ascent, descent = font.getmetrics()
+
+    # Create dummy image for measurement
+    dummy_img = Image.new("L", (1, 1))
+    dummy_draw = ImageDraw.Draw(dummy_img)
+    bbox = dummy_draw.textbbox((0, 0), text, font=font)
+
+    text_width = bbox[2] - bbox[0]
+    text_height = bbox[3] - bbox[1]
+
+    width = min(text_width + margin * 2, max_width)
+    height = text_height + margin * 2
+
+    img = Image.new("L", (width, height), color=255)
+    draw = ImageDraw.Draw(img)
+
+    # Vertical centering using ascent
+    x = (width - text_width) // 2
+    y = (height - (ascent + descent)) // 2 + (ascent - text_height)
+
+    draw.text((x, y), text, font=font, fill=0)
+
+    return img
+
 def generate_text_image(text, font_path="arial.ttf", size=32, margin=5, max_width=200):
     font = ImageFont.truetype(font_path, size-4)
     
@@ -50,6 +79,25 @@ vocab2 = [':', '/', '-']
 
 output_dir = r"C:\Users\ABC\Documents\clean_unique\synthetic"
 os.makedirs(output_dir, exist_ok=True)
+
+for i in range(500):
+    # Generate year or time stamplike str
+    year = random.randint(2000, 2025)
+    month = random.randint(1, 12)
+    day = random.randint(1, 28)  # safe range
+
+    # Build Japanese date string
+    tstr = f"{year}年{month:02d}月{day:02d}日"
+
+    # Create image
+    img = generate_jp_text_image(tstr)
+
+    fname = tstr
+
+    # Save image with its label
+    img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic_jp_date.png"))
+
+
 
 for i in range(500):
     # Generate year or time stamplike str
@@ -128,25 +176,4 @@ for i in range(500):
     # Save image with its label
     img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic_dollor.png"))
 
-
-for i in range(500):
-    # Generate year or time stamplike str
-    tstr = ""
-    tstr += "".join(random.choice(vocab) for _ in range(4))
-
-    tstr += "年"
-
-    tstr += "".join(random.choice(vocab) for _ in range(2))
-
-    tstr += "月"
-
-    tstr += "".join(random.choice(vocab) for _ in range(2))
-
-    tstr += "日"
-    
-    # Create image
-    img = generate_text_image(tstr)
-
-    # Save image with its label
-    img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic_jp_date.png"))
 
