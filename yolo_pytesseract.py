@@ -7,7 +7,11 @@ layout_model = YOLO('layout_best.pt')
 chunk_model = YOLO('text_chunk_epoch40_best.pt')
 
 # --- Image path ---
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test25.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test65.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\IMG_0943.jpg'
+image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_0944_l.jpg"
+image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_0946_.jpg"
+# image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\resume_jpn.png'
 original_image = cv2.imread(image_path)
 
 # Parameters to tweak sharpness
@@ -50,8 +54,8 @@ def process_image(image, label):
             gray = cv2.cvtColor(layout_crop, cv2.COLOR_BGR2GRAY)
             _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
 
-            text = pytesseract.image_to_string(thresh, lang='eng').strip()
-            data = pytesseract.image_to_data(thresh, lang='eng', output_type=pytesseract.Output.DICT)
+            text = pytesseract.image_to_string(thresh, lang='jpn').strip()
+            data = pytesseract.image_to_data(thresh, lang='jpn', output_type=pytesseract.Output.DICT)
             confidences = [int(c) for c in data['conf'] if int(c) >= 0]
             avg_conf = sum(confidences) / max(1, len(confidences)) / 100
 

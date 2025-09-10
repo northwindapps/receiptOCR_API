@@ -96,7 +96,7 @@ def isolate_receipt_adaptive(image_path):
     return img, None
 
 # Use the functions
-image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\test17.jpg'
+image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\IMG_0941.jpg'
 
 # Try method 1
 crop1, clean1, bbox = isolate_receipt_complete(image_path)

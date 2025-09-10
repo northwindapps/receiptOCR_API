@@ -77,7 +77,7 @@ def generate_text_image(text, font_path="arial.ttf", size=32, margin=5, max_widt
 vocab = ['8', '7', '6', '3', '5', '4','1','2','9','0']
 vocab2 = [':', '/', '-']
 
-output_dir = r"C:\Users\ABC\Documents\clean_unique\synthetic"
+output_dir = r"C:\Users\ABC\Documents\clean_unique_kanji\synthetic"
 os.makedirs(output_dir, exist_ok=True)
 
 for i in range(500):
@@ -92,33 +92,62 @@ for i in range(500):
     # Create image
     img = generate_jp_text_image(tstr)
 
-    fname = tstr
+    fname = tstr.replace("年","yy").replace("月","mm").replace("日","dd")
 
     # Save image with its label
     img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic_jp_date.png"))
 
 
-
 for i in range(500):
     # Generate year or time stamplike str
+    year = random.randint(2000, 2025)
+    month = random.randint(1, 12)
+    day = random.randint(1, 28)  # safe range
+
+    # Build Japanese date string
+    tstr = f"{year}年{month:02d}月{day:02d}日"
+
+    # Create image
+    img = generate_jp_text_image(tstr)
+
+    fname = tstr.replace("年","yy").replace("月","mm").replace("日","dd")
+
+    # Save image with its label
+    img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic_jp_date.png"))
+
+
+for i in range(300):
+    # Generate year or time stamplike str
     tstr = ""
-    tstr += "".join(random.choice(vocab) for _ in range(4))
-    
-    tstr += random.choice(vocab2)
-    
-    tstr += "".join(random.choice(vocab) for _ in range(2))
 
-    tstr += random.choice(vocab2)
+    tstr += str(i)
 
-    tstr += "".join(random.choice(vocab) for _ in range(2))
+    tstr += " 円"
     
     # Create image
-    img = generate_text_image(tstr)
+    img = generate_jp_text_image(tstr)
 
-    fname = tstr.replace("/","sl")
-    fname = fname.replace(":",";")
+    fname = tstr.replace("円","")
     # Save image with its label
     img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic.png"))
+
+
+for i in range(300):
+    # Generate year or time stamplike str
+    tstr = "("
+
+    tstr += str(i)
+
+    tstr += ")円"
+    
+    # Create image
+    img = generate_jp_text_image(tstr)
+
+    fname = tstr.replace("円","")
+    # Save image with its label
+    img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic.png"))
+
+
 
 for i in range(500):
     # Generate year or time stamplike str

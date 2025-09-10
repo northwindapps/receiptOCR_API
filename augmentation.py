@@ -1,4 +1,6 @@
 import cv2, os, glob, numpy as np, datetime
+import numpy as np
+
 
 # Read image
 # image_dir = r"C:\Users\ABC\Documents\clean_unique\clean"
@@ -10,8 +12,8 @@ import cv2, os, glob, numpy as np, datetime
 
 
 # Directories
-image_dir = r"C:\Users\ABC\Documents\clean_unique\clean"
-output_dir = r"C:\Users\ABC\Documents\clean_unique\\output"
+image_dir = r"C:\Users\ABC\Documents\clean_unique_kanji\cnndata\images"
+output_dir = r"C:\Users\ABC\Documents\clean_unique_kanji\variabtions"
 os.makedirs(output_dir, exist_ok=True)
 
 # Augmentation parameters
@@ -20,7 +22,7 @@ margin_range = (0, 6)        # random padding
 contrast_range = (0.9, 1.1)  # alpha
 brightness_range = (-10, 10) # beta
 noise_std = 5                # Gaussian noise standard deviation
-aug_per_image = 5            # number of augmentations per image
+aug_per_image = 3            # number of augmentations per image
 
 # Helper functions
 def rotate(image, deg):
@@ -48,6 +50,8 @@ image_files += glob.glob(os.path.join(image_dir, "*.png"))
 for img_path in image_files:
     filename = os.path.splitext(os.path.basename(img_path))[0]
     img = cv2.imread(img_path)
+    # img = cv2.imdecode(np.fromfile(img_path, dtype=np.uint8), cv2.IMREAD_COLOR)
+
     if img is None:
         print(f"Failed to read {img_path}")
         continue

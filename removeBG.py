@@ -1,31 +1,47 @@
+import os
 from rembg import new_session, remove
 from PIL import Image
 
 # input_path = input(r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_0941.jpg")
 # output_path = input(r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_0941_.jpg")
 
-input_path = r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_0942.jpg"
-output_path = r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_0942_.jpg"
 
-# Load original image and remove background
-image = Image.open(input_path).convert("RGBA")
+# Paths
+input_path = r"C:\Users\ABC\Downloads\receipt_jp.v4i.yolov11\valid\images"
+output_path = r"C:\Users\ABC\Downloads\receipt_jp.v4i.yolov11\valid\processed"
+
+# Make sure output folder exists
+os.makedirs(output_path, exist_ok=True)
+
+# Load background removal session once (faster than reloading for every image)
 session = new_session("isnet-general-use")
-foreground = remove(image, session=session)
 
-# Create blue background image (same size)
-blue_bg = Image.new("RGBA", foreground.size, (168, 231, 255, 255))  # (R, G, B, A)
-white_bg = Image.new("RGBA", foreground.size, (255, 255, 255, 255))  # Pure white
+# Process each file in the input folder
+for filename in os.listdir(input_path):
+    if not filename.lower().endswith((".png", ".jpg", ".jpeg")):
+        continue  # skip non-image files
 
-# Composite foreground over blue background
-composited = Image.alpha_composite(white_bg, foreground)
+    input_file = os.path.join(input_path, filename)
+    output_file = os.path.join(output_path, filename)
 
-# Convert to RGB if saving as JPEG
-if output_path.lower().endswith(".jpg") or output_path.lower().endswith(".jpeg"):
-    composited = composited.convert("RGB")
+    print(f"⏳ Processing {filename}...")
 
-# composited = composited.convert("RGB")
-# composited.save("final_id_photo.jpg")
+    # Load original image
+    image = Image.open(input_file).convert("RGBA")
 
-# Save final image
-composited.save(output_path)
-print(f"✅ Saved image with blue background to {output_path}")
+    # Remove background
+    foreground = remove(image, session=session)
+
+    # Create backgrounds
+    white_bg = Image.new("RGBA", foreground.size, (255, 255, 255, 255))  
+
+    # Composite foreground over background
+    composited = Image.alpha_composite(white_bg, foreground)
+
+    # Convert to RGB if saving as JPEG
+    if output_file.lower().endswith((".jpg", ".jpeg")):
+        composited = composited.convert("RGB")
+
+    # Save
+    composited.save(output_file)
+    print(f"✅ Saved to {output_file}")

@@ -55,11 +55,18 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                         processed_img = cv2.resize(contrast, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
                         g = cv2.cvtColor(processed_img, cv2.COLOR_BGR2GRAY)
                         
-                        thresh = cv2.adaptiveThreshold(g, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 9)
+                        # thresh = cv2.adaptiveThreshold(g, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 9)
+                        thresh = cv2.adaptiveThreshold(
+                            g, 255,
+                            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                            cv2.THRESH_BINARY,
+                            blockSize=25,
+                            C=4
+                        )
 
                         h, w = thresh.shape[:2]
 
-                        if w/h > 6.0:
+                        if w/h > 8.0:
                             break
 
                         target_h = 31
@@ -76,11 +83,11 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                         for cnt in contours:
                             if cv2.contourArea(cnt) < cont_value:
                                 cv2.drawContours(thresh, [cnt], -1, 0, -1)
-                        vocab = "0123456789.,-$;/￥ "
+                        vocab = "0123456789.,-$;/￥年月日 "
                         char_to_idx = {c:i+1 for i,c in enumerate(vocab)}  # 0 reserved for blank
                         idx_to_char = {i+1:c for i,c in enumerate(vocab)}
                         # Path to your model
-                        model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\crnn_model_8k_valloss_0.19_stable.keras"
+                        model_path = r"C:\Users\ABC\Documents\receiptYOLOProject\kanji_crnn_modelval_loss_ 0.5722.keras"
 
                         # Load the model
                         base_model = load_model(model_path, compile=False)
@@ -98,10 +105,7 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                         decoded_text = ''.join(decoded_text)
                         decoded_text = decoded_text.replace("/","sl")
 
-                         # Save the cropped image
-                        crop_filename = os.path.join(save_original_dir, f"0_{decoded_text}_{idx}_{jdx}_original.png")
-                        cv2.imwrite(crop_filename, thresh)
-                        print(f"Saved crop: {crop_filename}")
+                        
 
 
                         # Run Tesseract
@@ -109,8 +113,13 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                         avg_conf = sum(int(c) for c in data['conf'] if int(c) >= 0) / max(1, len([c for c in data['conf'] if int(c) >= 0]))
                         avg_conf /= 100
 
-                        text = pytesseract.image_to_string(g, lang='eng', config="--psm 7 -c tessedit_char_whitelist=0123456789:.$").strip()
-                        # text = pytesseract.image_to_string(thresh, lang='eng').strip()
+                        # text = pytesseract.image_to_string(g, lang='eng', config="--psm 7 -c tessedit_char_whitelist=0123456789:.$").strip()
+                        text = pytesseract.image_to_string(thresh, lang='eng', config="--psm 7").strip()
+
+                        # Save the cropped image
+                        crop_filename = os.path.join(save_original_dir, f"0_{decoded_text}_{idx}_{jdx}_av_{av}_cont_{cont_value}_bv_{bv}.png")
+                        cv2.imwrite(crop_filename, thresh)
+                        print(f"Saved crop: {crop_filename}")
 
                         if text.strip() == '':
                             return False
@@ -169,7 +178,7 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                                         print("Contains $")
                             # Save the cropped image
                             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-                            crop_filename = os.path.join(save_dir, f"90_{safe_filename(decoded_text)}_{safe_filename(best_text)}_{timestamp}.jpg")
+                            crop_filename = os.path.join(save_dir, f"90_{safe_filename(decoded_text)}_{safe_filename(best_text)}_{timestamp}_av_{av}_cont_{cont_value}_bv_{bv}.jpg")
                             # cv2.imwrite(crop_filename, thresh)
                             cv2.imwrite(crop_filename,thresh,[int(cv2.IMWRITE_JPEG_QUALITY), 95] )
                             print(f"Saved crop: {crop_filename}")
@@ -212,7 +221,7 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
                                             print("Contains $")
                                 # Save the cropped image
                                 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-                                crop_filename = os.path.join(save_dir, f"70_{safe_filename(decoded_text)}_{safe_filename(best_text)}_{timestamp}.jpg")
+                                crop_filename = os.path.join(save_dir, f"70_{safe_filename(decoded_text)}_{safe_filename(best_text)}_{timestamp}_av_{av}_cont_{cont_value}_bv_{bv}.jpg")
                                 cv2.imwrite(crop_filename,thresh,[int(cv2.IMWRITE_JPEG_QUALITY), 95] )
                                 print(f"Saved crop: {crop_filename}")
                                 print(f"alpha:beta:contour,scale: [{av}, {bv}, {cont_value},{scale}]")
@@ -224,11 +233,21 @@ def reading_part(rotate_degrees,idx,jdx,cont_area_values, sharpend,totalLabel_bo
     return True
 
 # Load models
-totalLabel_model = YOLO('text_chunk_epoch40_best.pt')         
+totalLabel_model = YOLO('date_telephone_jp_best.pt')         
 
 # Image path
 # image_path = r'C:\Users\ABC\Documents\receiptYOLOProject\IMG_0955.jpg'
 image_path = r"C:\Users\ABC\Downloads\large-receipt-image-dataset-SRD\1182-receipt.jpg"
+image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_0942.jpg"
+image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_0947.jpg"
+image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_0954.jpg"
+image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_0949.jpg"
+image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_0946.jpg"
+image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_0944_l.jpg"#notworking 
+image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\test25.jpg"
+image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_0942_.jpg"
+image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_20250908_173819_.jpg"
+image_path = r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_0943_.jpg"
 image = cv2.imread(image_path)
 sharpened = image
 
@@ -253,6 +272,7 @@ reader = easyocr.Reader(['en'], gpu=False)  # Change gpu=True if you have a GPU 
 # beta_values = [-80,-50,0,50,80,160]  # brightness
 alpha_values = [-2.0,-1.0,1.0,2.0]  # contrast
 beta_values = [100,50,25,0,-25,-50,-100]
+# beta_values = [0]
 cont_area_values = [15,55]
 rotate_degrees = [-1.5,-1.0,0,1.0,1.5]
 scales = [1.0,1.2,1.4,1.6,1.8]
