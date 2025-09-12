@@ -37,15 +37,29 @@ for fname in name_list:
         continue  # skip files without marker
     # fname = fname.replace(" ","_")
     chunks = fname.split("_")
+    try:
+        annotation = chunks[1]
+    except IndexError:   # or "" or some fallback
+        print("error at", fname)
+        new_path = os.path.join(folder, fname)
+        os.remove(new_path)
+        continue
+
     annotation = chunks[1]
     annotation = annotation.replace("jpy","￥")
     annotation = annotation.replace("sl","/")
     annotation = annotation.replace("yy","年")
     annotation = annotation.replace("mm","月")
     annotation = annotation.replace("dd","日")
+    annotation = annotation.replace("yen","円")
     cleaned = re.sub(r"[A-Za-z\s]", "", annotation)
     # cleaned = re.sub(r"[^0-9\-]", "", annotation)
     print(cleaned)
+    if cleaned == "":  
+        print("error at", fname)
+        # new_path = os.path.join(folder, fname)
+        # os.remove(new_path)
+        continue
     if cleaned != "":
    
         data.append({

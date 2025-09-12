@@ -2,13 +2,13 @@ import os
 from rembg import new_session, remove
 from PIL import Image
 
-# input_path = input(r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_0941.jpg")
-# output_path = input(r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_0941_.jpg")
+# input_path = input(r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_0968.jpg")
+# output_path = input(r"C:\Users\ABC\Documents\receiptYOLOProject\IMG_0968_.jpg")
 
 
 # Paths
-input_path = r"C:\Users\ABC\Downloads\receipt_jp.v4i.yolov11\valid\images"
-output_path = r"C:\Users\ABC\Downloads\receipt_jp.v4i.yolov11\valid\processed"
+input_path = r"C:\Users\ABC\Documents\receiptYOLOProject\input"
+output_path = r"C:\Users\ABC\Documents\receiptYOLOProject\output"
 
 # Make sure output folder exists
 os.makedirs(output_path, exist_ok=True)

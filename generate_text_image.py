@@ -20,12 +20,12 @@ import os
 
 from PIL import Image, ImageDraw, ImageFont
 
+from PIL import Image, ImageDraw, ImageFont
+
 def generate_jp_text_image(text, font_path="C:/Windows/Fonts/meiryo.ttc", size=20, margin=5, max_width=200):
     font = ImageFont.truetype(font_path, size)
 
-    ascent, descent = font.getmetrics()
-
-    # Create dummy image for measurement
+    # Measure bbox
     dummy_img = Image.new("L", (1, 1))
     dummy_draw = ImageDraw.Draw(dummy_img)
     bbox = dummy_draw.textbbox((0, 0), text, font=font)
@@ -39,13 +39,15 @@ def generate_jp_text_image(text, font_path="C:/Windows/Fonts/meiryo.ttc", size=2
     img = Image.new("L", (width, height), color=255)
     draw = ImageDraw.Draw(img)
 
-    # Vertical centering using ascent
-    x = (width - text_width) // 2
-    y = (height - (ascent + descent)) // 2 + (ascent - text_height)
+    # Correct centering: shift by bbox[1] (the baseline offset)
+    x = (width - text_width) // 2 - bbox[0]
+    y = (height - text_height) // 2 - bbox[1]
 
     draw.text((x, y), text, font=font, fill=0)
 
     return img
+
+
 
 def generate_text_image(text, font_path="arial.ttf", size=32, margin=5, max_width=200):
     font = ImageFont.truetype(font_path, size-4)
@@ -80,7 +82,7 @@ vocab2 = [':', '/', '-']
 output_dir = r"C:\Users\ABC\Documents\clean_unique_kanji\synthetic"
 os.makedirs(output_dir, exist_ok=True)
 
-for i in range(500):
+for i in range(200):
     # Generate year or time stamplike str
     year = random.randint(2000, 2025)
     month = random.randint(1, 12)
@@ -98,7 +100,7 @@ for i in range(500):
     img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic_jp_date.png"))
 
 
-for i in range(500):
+for i in range(200):
     # Generate year or time stamplike str
     year = random.randint(2000, 2025)
     month = random.randint(1, 12)
@@ -114,6 +116,23 @@ for i in range(500):
 
     # Save image with its label
     img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic_jp_date.png"))
+
+
+for i in range(300):
+    # Generate year or timestamp-like str
+    price = random.randint(1, 10000)
+
+    # Format with comma separator
+    tstr = f"￥{price:,}"
+    
+    # Create image
+    img = generate_jp_text_image(tstr)
+
+    # Safe filename (replace ￥ with jpy)
+    fname = tstr.replace("￥", "jpy")
+
+    # Save image with its label
+    img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic_jp_jpy.png"))
 
 
 for i in range(300):
@@ -127,12 +146,12 @@ for i in range(300):
     # Create image
     img = generate_jp_text_image(tstr)
 
-    fname = tstr.replace("円","")
+    fname = tstr.replace("円","yen")
     # Save image with its label
     img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic.png"))
 
 
-for i in range(300):
+for i in range(400):
     # Generate year or time stamplike str
     tstr = "("
 
@@ -143,13 +162,32 @@ for i in range(300):
     # Create image
     img = generate_jp_text_image(tstr)
 
-    fname = tstr.replace("円","")
+    fname = tstr.replace("円","yen")
     # Save image with its label
     img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic.png"))
 
+for i in range(300):
+    # Generate year or time stamplike str
+
+    tstr = "@"
+
+    price = round(random.uniform(1, 1000), 2)
+
+    tstr += str(price)
+
+    tstr += ""
+    
+    # Create image
+    # img = generate_jp_text_image(font_path="C:/Windows/Fonts/msgothic.ttc" ,text=tstr)
+    img = generate_jp_text_image(tstr)
+
+    fname = tstr
+    # Save image with its label
+    img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic_at.png"))
 
 
-for i in range(500):
+
+for i in range(100):
     # Generate year or time stamplike str
     tstr = ""
     tstr += tstr.join(random.choice(vocab) for _ in range(2))
@@ -171,7 +209,7 @@ for i in range(500):
     img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic.png"))
 
 
-for i in range(500):
+for i in range(200):
     # Generate year or time stamplike str
     tstr = "".join(random.choice(vocab) for _ in range(2))
 
@@ -188,7 +226,7 @@ for i in range(500):
     img.save(os.path.join(output_dir, f"{i}_{fname}_synthetic_date.png"))
 
 
-for i in range(500):
+for i in range(50):
     # Generate year or time stamplike str
     tstr = "$"
     tstr += "".join(random.choice(vocab) for _ in range(2))

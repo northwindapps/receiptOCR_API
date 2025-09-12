@@ -22,7 +22,7 @@ margin_range = (0, 6)        # random padding
 contrast_range = (0.9, 1.1)  # alpha
 brightness_range = (-10, 10) # beta
 noise_std = 5                # Gaussian noise standard deviation
-aug_per_image = 3            # number of augmentations per image
+aug_per_image = 4            # number of augmentations per image
 
 # Helper functions
 def rotate(image, deg):
