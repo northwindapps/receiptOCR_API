@@ -180,7 +180,8 @@ def process_image():
         decoded_text = [idx_to_char.get(int(i), "?") for i in decoded_indices if i > 0]
         decoded_str = "".join(decoded_text)
         print("Decoded:", decoded_str)
-        results.append({"kind": kind, "text": decoded_str})
+        if "@" in decoded_str or "円" in decoded_str:
+            results.append({"kind": kind, "text": decoded_str})
         if "@" in decoded_str:
             break
 
