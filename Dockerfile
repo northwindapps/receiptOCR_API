@@ -10,20 +10,23 @@ RUN apt-get update && apt-get install -y \
 # Set workdir
 WORKDIR /app
 
+# Install Linux CPU torch
+RUN pip install torch==2.2.2+cpu --index-url https://download.pytorch.org/whl/cpu
+
+# Install CPU torchvision that matches torch 2.2.2
+RUN pip install torchvision==0.17.2+cpu --index-url https://download.pytorch.org/whl/cpu
+
 # 2. Copy ONLY the requirements file first
-COPY requirements.in .
+COPY requirement2.txt .
+COPY constraints.txt .
 
-RUN pip install --upgrade pip pip-tools && \
-    pip-compile \
-        --no-emit-index-url \
-        --no-emit-options \
-        --generate-hashes \
-        requirements.in \
-        -o requirement2.txt
-
+# Install all packages except torch
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --default-timeout=100 --retries=5 --no-cache-dir \
+    -c constraints.txt \
     -r requirement2.txt
+# RUN pip install -r requirement2.txt 
+
 
 # 4. Copy ONLY the relevant application files.
 # This creates a lean image and a robust build cache.
